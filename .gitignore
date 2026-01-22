@@ -1,0 +1,16 @@
+# env
+.env
+backend/.env
+client-side/.env
+
+# python cache
+__pycache__/
+*.pyc
+
+# venv
+venv/
+backend/venv/
+
+# node
+node_modules/
+dist/
