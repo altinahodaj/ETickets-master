@@ -5,8 +5,7 @@
       <p class="cinema">CINEMA VERSE PRESENTS</p>
       <img
         class="ml-8"
-        src="http://localhost:8080/assets/app_files/main-logo_1.jpg"
-        height="2px"
+        src="/assets/app_files/main-logo_1.jpg"
         style="height: 50px"
         alt="Logo"
       />

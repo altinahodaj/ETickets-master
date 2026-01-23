@@ -10,7 +10,7 @@ export default [
   },
   {
     path: "/home",
-    name: "Home",
+    name: "HomeAlt",
     meta: {
       layout: "public",
     },

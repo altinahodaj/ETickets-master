@@ -11,7 +11,7 @@ export const axiosIns = {};
 // eslint-disable-next-line no-restricted-syntax
 Object.keys(subdomains).forEach((subdomain) => {
   axiosIns[subdomain] = axios.create({
-    baseURL: subdomains[subdomain],
+    baseURL: subdomains[subdomain] + "/api",
     headers: {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods":

@@ -109,11 +109,13 @@ async def upload_event_photo(
         raise HTTPException(status_code=404, detail="Event not found")
 
     # save file
-    file_location = os.path.join(UPLOAD_DIR, f"{event_id}_{file.filename}")
+    filename = f"{event_id}_{file.filename}"
+    file_location = os.path.join(UPLOAD_DIR, filename).replace("\\", "/")
     with open(file_location, "wb") as f:
         f.write(await file.read())
 
     # save record in DB
+    # Ruajmë path-in me slashes / që të jetë i pajtueshëm me URL-të
     photo = models.EventPhoto(event_id=event.id, file_path=file_location)
     db.add(photo)
     db.commit()

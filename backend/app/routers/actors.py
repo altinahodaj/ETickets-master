@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.db import models
+from app.schemas.actors import ActorCreate, ActorResponse
 
 router = APIRouter(prefix="/api/actors", tags=["actors"])
 
@@ -48,19 +49,14 @@ def get_actor(actor_id: int, db: Session = Depends(get_db)):
 # CREATE ACTOR
 # ------------------------------
 @router.post("")
-def create_actor(payload: dict, db: Session = Depends(get_db)):
-    first_name = payload.get("firstName")
-    last_name = payload.get("lastName")
-    if not first_name or not last_name:
-        raise HTTPException(status_code=400, detail="firstName and lastName are required")
-
+def create_actor(payload: ActorCreate, db: Session = Depends(get_db)):
     actor = models.Actor(
-        first_name=first_name,
-        last_name=last_name,
-        img_path=payload.get("imgPath"),
-        nationality=payload.get("nationality"),
-        genre=payload.get("genre"),
-        birth=payload.get("birth"),
+        first_name=payload.firstName,
+        last_name=payload.lastName,
+        img_path=payload.imgPath,
+        nationality=payload.nationality,
+        genre=payload.genre,
+        birth=payload.birth,
         deleted=False,
     )
     db.add(actor)
@@ -73,19 +69,17 @@ def create_actor(payload: dict, db: Session = Depends(get_db)):
 # UPDATE ACTOR
 # ------------------------------
 @router.put("/{actor_id}")
-def update_actor(actor_id: int, payload: dict, db: Session = Depends(get_db)):
+def update_actor(actor_id: int, payload: ActorCreate, db: Session = Depends(get_db)):
     actor = db.query(models.Actor).filter(models.Actor.id == actor_id).first()
     if not actor:
         raise HTTPException(status_code=404, detail="Actor not found")
 
-    for field in ["first_name", "last_name", "img_path", "nationality", "genre", "birth", "deleted"]:
-        frontend_field = field
-        if field == "first_name": frontend_field = "firstName"
-        if field == "last_name": frontend_field = "lastName"
-        if field == "img_path": frontend_field = "imgPath"
-
-        if frontend_field in payload:
-            setattr(actor, field, payload[frontend_field])
+    actor.first_name = payload.firstName
+    actor.last_name = payload.lastName
+    actor.img_path = payload.imgPath
+    actor.nationality = payload.nationality
+    actor.genre = payload.genre
+    actor.birth = payload.birth
 
     db.commit()
     db.refresh(actor)

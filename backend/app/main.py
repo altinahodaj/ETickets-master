@@ -20,7 +20,8 @@ from app.routers.compat_dotnet import router as compat_dotnet_router
 from app.routers import auth
 from app.routers.photos import router as photos_router
 from app.routers.reviews import router as reviews_router
-# from app.routers.actors import router as actors_router
+from app.routers.events import router as events_router
+from app.routers.actors import router as actors_router
 
 
 
@@ -29,7 +30,10 @@ app = FastAPI(title="ETickets API")
 # ✅ Static assets (photos, default images, etj)
 BASE_DIR = Path(__file__).resolve().parent.parent  # -> backend/
 ASSETS_DIR = BASE_DIR / "assets"
+UPLOAD_DIR = BASE_DIR / "uploads"
+
 app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 # ✅ Routers
 app.include_router(photos_router)
@@ -39,11 +43,11 @@ app.include_router(halls_router)
 app.include_router(movie_times_router)
 app.include_router(seating_router)
 app.include_router(tickets_router)
-#app.include_router(events_router)
+app.include_router(events_router)
 app.include_router(compat_dotnet_router)
 app.include_router(auth.router)
 app.include_router(reviews_router)
-# app.include_router(actors_router)
+app.include_router(actors_router)
 
 # ✅ Health checks
 @app.get("/")
@@ -64,6 +68,11 @@ app.add_middleware(
         "http://localhost:5173",
         "http://localhost:3000",
         "http://localhost:8080",
+        "http://127.0.0.1:8080",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
     ],
     allow_credentials=True,
     allow_methods=["*"],

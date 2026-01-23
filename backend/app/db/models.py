@@ -40,7 +40,7 @@ class Photo(Base):
 
     cinema_id: Mapped[int | None] = mapped_column(ForeignKey("cinemas.id"), nullable=True)
     movie_id: Mapped[int | None] = mapped_column(ForeignKey("movies.id"), nullable=True)
-    # actor_id: Mapped[int | None] = mapped_column(ForeignKey("actors.id"), nullable=True) 
+    actor_id: Mapped[int | None] = mapped_column(ForeignKey("actors.id"), nullable=True) 
 
     # p.sh. "cinema" | "movie" | "banner" | "actors"
     photo_type: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -242,7 +242,8 @@ class Ticket(Base):
         UniqueConstraint("movie_time_id", "seat_id", name="uq_ticket_movietime_seat"),
     )
 
-""" class Actor(Base):
+
+class Actor(Base):
     __tablename__ = "actors"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
@@ -264,5 +265,37 @@ class Ticket(Base):
         viewonly=True,
         order_by=lambda: Photo.insert_date.desc(),
         lazy="selectin",
-    ) """
+    )
+
+
+class Event(Base):
+    __tablename__ = "events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    cinema_id: Mapped[int] = mapped_column(ForeignKey("cinemas.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    is_paid: Mapped[bool] = mapped_column(Boolean, default=False)
+    price: Mapped[int] = mapped_column(Integer, default=0)
+    attendees_number: Mapped[int] = mapped_column(Integer, default=0)
+    deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    photos: Mapped[list["EventPhoto"]] = relationship(
+        "EventPhoto",
+        back_populates="event",
+        lazy="selectin",
+        cascade="all, delete-orphan"
+    )
+
+
+class EventPhoto(Base):
+    __tablename__ = "event_photos"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    event_id: Mapped[int] = mapped_column(ForeignKey("events.id"), nullable=False)
+    file_path: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    event: Mapped["Event"] = relationship(back_populates="photos")
+
     

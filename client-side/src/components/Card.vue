@@ -10,6 +10,11 @@
         :src="event.photos[0].imgClientPath"
         alt="Image"
       />
+      <b-card-img
+        v-else
+        src="/assets/app_files/Movies/default-image.jpg"
+        alt="Default Image"
+      />
       <b-col md="6" class="text-center mx-auto">
         <b-card-body :title="event.name">
           <b-card-text>

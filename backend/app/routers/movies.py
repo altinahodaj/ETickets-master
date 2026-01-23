@@ -4,6 +4,7 @@ from sqlalchemy import func
 
 from app.db.session import get_db
 from app.db import models
+from app.schemas.movies import MovieCreate, MovieResponse
 
 router = APIRouter(prefix="/api/cinemas/{cinema_id}/movies", tags=["movies"])
 
@@ -82,8 +83,8 @@ def get_movie(cinema_id: int, movie_id: int, db: Session = Depends(get_db)):
     return {"result": movie, "errors": [], "messages": []}
 
 
-@router.post("")
-def create_movie(cinema_id: int, payload: dict, db: Session = Depends(get_db)):
+@router.post("", response_model=dict)
+def create_movie(cinema_id: int, payload: MovieCreate, db: Session = Depends(get_db)):
     cinema = (
         db.query(models.Cinema)
         .filter(models.Cinema.id == cinema_id, models.Cinema.deleted == False)
@@ -92,19 +93,15 @@ def create_movie(cinema_id: int, payload: dict, db: Session = Depends(get_db)):
     if not cinema:
         raise HTTPException(status_code=404, detail="Cinema not found")
 
-    title = payload.get("title")
-    if not title:
-        raise HTTPException(status_code=400, detail="title is required")
-
     movie = models.Movie(
         cinema_id=cinema_id,
-        title=title,
-        description=payload.get("description"),
-        genre=payload.get("genre"),
-        language=payload.get("language"),
-        length_minutes=payload.get("length_minutes"),
-        release_year=payload.get("release_year"),
-        director=payload.get("director"),
+        title=payload.title,
+        description=payload.description,
+        genre=payload.genre,
+        language=payload.language,
+        length_minutes=payload.length_minutes,
+        release_year=payload.release_year,
+        director=payload.director,
         deleted=False,
     )
     db.add(movie)
@@ -117,8 +114,8 @@ def create_movie(cinema_id: int, payload: dict, db: Session = Depends(get_db)):
     return {"result": movie, "errors": [], "messages": ["Movie created"]}
 
 
-@router.put("/{movie_id}")
-def update_movie(cinema_id: int, movie_id: int, payload: dict, db: Session = Depends(get_db)):
+@router.put("/{movie_id}", response_model=dict)
+def update_movie(cinema_id: int, movie_id: int, payload: MovieCreate, db: Session = Depends(get_db)):
     movie = (
         db.query(models.Movie)
         .filter(
@@ -130,18 +127,13 @@ def update_movie(cinema_id: int, movie_id: int, payload: dict, db: Session = Dep
     if not movie or movie.deleted:
         raise HTTPException(status_code=404, detail="Movie not found")
 
-    for field in [
-        "title",
-        "description",
-        "genre",
-        "language",
-        "length_minutes",
-        "release_year",
-        "director",
-        "deleted",
-    ]:
-        if field in payload:
-            setattr(movie, field, payload[field])
+    movie.title = payload.title
+    movie.description = payload.description
+    movie.genre = payload.genre
+    movie.language = payload.language
+    movie.length_minutes = payload.length_minutes
+    movie.release_year = payload.release_year
+    movie.director = payload.director
 
     db.commit()
     db.refresh(movie)

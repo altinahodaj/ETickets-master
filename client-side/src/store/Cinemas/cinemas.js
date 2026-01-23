@@ -30,7 +30,7 @@ export default {
       commit("SET_LOADING", true);
       return new Promise((resolve, reject) => {
         backendApi
-          .get("/cinemas")
+          .get("cinemas")
           .then((response) => {
             commit("SET_CINEMAS", response.data.result);
             resolve(response);
@@ -44,7 +44,7 @@ export default {
       commit("SET_LOADING", true);
       return new Promise((resolve, reject) => {
         backendApi
-          .get(`/cinemas/${cinemaId}`)
+          .get(`cinemas/${cinemaId}`)
           .then((response) => {
             commit("SET_CINEMA", response.data.result);
             resolve(response);
@@ -58,7 +58,7 @@ export default {
       commit("SET_LOADING", true);
       return new Promise((resolve, reject) => {
         backendApi
-          .delete(`/cinemas/${cinemaId}`)
+          .delete(`cinemas/${cinemaId}`)
           .then((response) => {
             commit("REMOVE_CINEMA", cinemaId);
             resolve(response);
@@ -72,7 +72,7 @@ export default {
       commit("SET_LOADING", true);
       return new Promise((resolve, reject) => {
         backendApi
-          .put(`/cinemas/${cinema.id}`, cinema)
+          .put(`cinemas/${cinema.id}`, cinema)
           .then((response) => {
             // në kodin tënd origjinal ishte ADD_CINEMA, po e lë siç e kishe
             commit("ADD_CINEMA", cinema);
@@ -87,7 +87,7 @@ export default {
       commit("SET_LOADING", true);
       return new Promise((resolve, reject) => {
         backendApi
-          .post(`/cinemas`, cinema)
+          .post(`cinemas`, cinema)
           .then((response) => {
             commit("ADD_CINEMA", cinema);
             resolve(response);
@@ -103,7 +103,7 @@ export default {
         const headers = { "Content-Type": "multipart/form-data" };
 
         backendApi
-          .post(`/cinemas/${query.cinemaId}/photos`, query.files, { headers })
+          .post(`cinemas/${query.cinemaId}/photos`, query.files, { headers })
           .then((response) => resolve(response))
           .catch((error) => reject(error))
           .finally(() => commit("SET_LOADING", false));
@@ -114,7 +114,7 @@ export default {
       commit("SET_LOADING", true);
       return new Promise((resolve, reject) => {
         backendApi
-          .delete(`/cinemas/${query.cinemaId}/photos/${query.photoId}`)
+          .delete(`cinemas/${query.cinemaId}/photos/${query.photoId}`)
           .then((response) => resolve(response))
           .catch((error) => reject(error))
           .finally(() => commit("SET_LOADING", false));

@@ -91,7 +91,7 @@
             />
             <img
               v-else
-              src="http://localhost:8080/assets/app_files/Movies/default-image.jpg"
+              src="/assets/app_files/Movies/default-image.jpg"
               class="avatar-image"
               :alt="item.id"
             />

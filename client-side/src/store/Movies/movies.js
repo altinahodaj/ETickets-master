@@ -34,7 +34,7 @@ export default {
   commit("SET_LOADING", true);
 
   // Nëse nuk ka cinemaId → merr të gjithë filmat (compat/global)
-  const url = cinemaId ? `/cinemas/${cinemaId}/movies` : `/movies`;
+  const url = cinemaId ? `cinemas/${cinemaId}/movies` : `movies`;
 
   return new Promise((resolve, reject) => {
     backendApi
@@ -53,7 +53,7 @@ export default {
       commit("SET_LOADING", true);
       return new Promise((resolve, reject) => {
         backendApi
-          .get(`/cinemas/${query.cinemaId}/movies/${query.movieId}/actors`)
+          .get(`cinemas/${query.cinemaId}/movies/${query.movieId}/actors`)
           .then((response) => {
             commit("SET_MOVIE_ACTORS", response.data.result);
             resolve(response);
@@ -67,7 +67,7 @@ export default {
       commit("SET_LOADING", true);
       return new Promise((resolve, reject) => {
         backendApi
-          .get(`/cinemas/${query.cinemaId}/movies/${query.movieId}`)
+          .get(`cinemas/${query.cinemaId}/movies/${query.movieId}`)
           .then((response) => {
             commit("SET_MOVIE", response.data.result);
             resolve(response);
@@ -81,7 +81,7 @@ export default {
       commit("SET_LOADING", true);
       return new Promise((resolve, reject) => {
         backendApi
-          .delete(`/cinemas/${query.cinemaId}/movies/${query.movieId}`)
+          .delete(`cinemas/${query.cinemaId}/movies/${query.movieId}`)
           .then((response) => {
             commit("REMOVE_MOVIE", query.movieId);
             resolve(response);
@@ -95,7 +95,7 @@ export default {
       commit("SET_LOADING", true);
       return new Promise((resolve, reject) => {
         backendApi
-          .put(`/cinemas/${query.cinemaId}/movies/${query.movie.id}`, query.movie)
+          .put(`cinemas/${query.cinemaId}/movies/${query.movie.id}`, query.movie)
           .then((response) => {
             commit("ADD_MOVIE", query.movie);
             resolve(response);
@@ -109,7 +109,7 @@ export default {
       commit("SET_LOADING", true);
       return new Promise((resolve, reject) => {
         backendApi
-          .post(`/cinemas/${query.cinemaId}/movies`, query.movie)
+          .post(`cinemas/${query.cinemaId}/movies`, query.movie)
           .then((response) => {
             commit("ADD_MOVIE", query.movie);
             resolve(response);
@@ -126,7 +126,7 @@ export default {
 
         backendApi
           .post(
-            `/cinemas/${query.cinemaId}/movies/${query.movieId}/photos`,
+            `cinemas/${query.cinemaId}/movies/${query.movieId}/photos`,
             query.files,
             { headers }
           )
@@ -141,7 +141,7 @@ export default {
       return new Promise((resolve, reject) => {
         backendApi
           .delete(
-            `/cinemas/${query.cinemaId}/movies/${query.movieId}/photos/${query.photoId}`
+            `cinemas/${query.cinemaId}/movies/${query.movieId}/photos/${query.photoId}`
           )
           .then((response) => resolve(response))
           .catch((error) => reject(error))

@@ -214,7 +214,7 @@ export default {
       return this.$store.state.users.users;
     },
     loading() {
-      return this.$store.state.movies.loading;
+      return this.$store.state.users.loading;
     },
     isSelected() {
       return this.selected[0];

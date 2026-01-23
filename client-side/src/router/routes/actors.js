@@ -12,18 +12,6 @@ export default [
 			),
 	},
 	{
-		path: "/admin/actors",
-		name: "ActorsDashboard",
-		meta: {
-			requiresAuth: true,
-			layout: "dashboard",
-		},
-		component: () =>
-			import(
-				/* webpackChunkName: "admin" */ "../../views/Admin/Actors/ActorsDashboard"
-			),
-	},
-	{
 		path: "/admin/actors/create",
 		name: "actor-create",
 		meta: {

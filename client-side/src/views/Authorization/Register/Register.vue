@@ -146,8 +146,15 @@ export default {
           photoURL: result.user.photoURL,
           isAdmin: false,
         };
-        this.registerUser(user);
-        this.$router.push("/");
+        this.$store.dispatch("addUser", user)
+          .then(() => {
+            this.$router.push("/");
+          })
+          .catch((err) => {
+            console.error("Google sync failed", err);
+            alert("Google login success, but database sync failed.");
+            this.$router.push("/");
+          });
       });
     },
     registerUser(query) {
@@ -159,8 +166,8 @@ export default {
       this.$refs.form.validate();
     },
     submitForm() {
-      this.validate;
-      if (this.isFormValid()) {
+      this.$refs.form.validate();
+      if (this.valid) {
         this.error = false;
         this.errorMsg = null;
         createUserWithEmailAndPassword(getAuth(), this.email, this.password)
@@ -170,11 +177,17 @@ export default {
               accessToken: result.user.accessToken,
               displayName: this.displayName,
               email: this.email,
-              photoURL: result.user.photoURL || this.defaultUserImg,
+              photoURL: this.photoURL || this.defaultUserImg,
               isAdmin: false,
             };
-            this.registerUser(user);
-            this.$router.push("/");
+            this.$store.dispatch("addUser", user)
+              .then(() => {
+                this.$router.push("/");
+              })
+              .catch((err) => {
+                console.error("Backend sync failed", err);
+                this.errorMsg = "Account created in Firebase, but failed to sync with our database. Please contact admin.";
+              });
           })
           .catch((err) => {
             this.errorMsg = err.code;
@@ -185,16 +198,7 @@ export default {
       }
     },
     isFormValid() {
-      if (
-        this.firstName !== null &&
-        this.lastName !== null &&
-        this.email !== null &&
-        this.password !== null
-      ) {
-        return true;
-      } else {
-        return false;
-      }
+      return this.valid;
     },
   },
 };

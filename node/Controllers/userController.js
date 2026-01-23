@@ -5,30 +5,34 @@ const User = require("../Models/User");
 const firestore = firebase.firestore();
 
 const getUsers = async (req, res, next) => {
+  console.log("getUsers called");
   try {
     const users = await firestore.collection("users");
+    console.log("Fetching users from firestore...");
     const data = await users.get();
+    console.log("Firestore response received, count:", data.size);
     const usersList = [];
 
     if (data.empty) {
-      res.status(404).send("No users found!");
+      console.log("No users in 'users' collection.");
+      res.status(200).send([]); // Return empty array instead of 404
     } else {
       data.forEach((doc) => {
-        //fix the return model later
+        const d = doc.data();
         const user = new User(
-          doc.data().id,
-          doc.data().accessToken,
-          doc.data().displayName,
-          doc.data().email,
-          doc.data().photoURL,
-          doc.data().isAdmin,
-          doc.id
+          d.id || d.uid || doc.id,
+          d.accessToken || "",
+          d.displayName || d.name || "User",
+          d.email,
+          d.photoURL || "",
+          d.isAdmin || false
         );
         usersList.push(user);
       });
       res.status(200).send(usersList);
     }
   } catch (error) {
+    console.error("Error in getUsers:", error);
     res.status(400).send(error.message);
   }
 };

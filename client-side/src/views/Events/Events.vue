@@ -49,18 +49,9 @@ export default {
           "getEvents",
           this.cinemaId == null ? this.cinema.id : this.cinemaId
         )
-        .then(() => {
-          if (this.events.length > 0) {
-            if (this.events.photos.length > 0) {
-              this.events.photos.forEach((photo) => {
-                require(photo.imgClientPath);
-              });
-            }
-          }
-        })
         .catch((error) => {
           console.log(
-            error.response?.data?.errors[0] ||
+            error.response?.data?.errors?.[0] ||
               "Something went wrong while fetching events!"
           );
         });

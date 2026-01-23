@@ -2,9 +2,9 @@
   <div class="header">
     <router-link :to="{ name: 'Home' }">
       <img
-        src="http://localhost:8080/assets/main-logo_1.jpg"
+        src="/assets/main-logo_1.jpg"
         alt="Logo"
-        max-width="30"
+        style="height: 40px"
         class="logo-img"
       />
     </router-link>
@@ -34,6 +34,17 @@
         >
           Cinemas
         </router-link>
+
+        <!-- ✅ Admin Dashboard Button -->
+        <router-link
+          v-if="isAdmin"
+          class="admin-btn"
+          :to="{ name: 'Admin' }"
+        >
+          <v-icon left color="white">mdi-shield-account</v-icon>
+          Admin Dashboard
+        </router-link>
+
         <div class="hidethese2">
           <router-link v-if="isAdmin" :to="{ name: 'Admin' }">
             Admin

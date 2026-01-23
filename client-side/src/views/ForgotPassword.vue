@@ -27,8 +27,7 @@
 <script>
 import email from "../assets/Icons/envelope-regular.svg";
 import Modal from "../components/Modal";
-import firebase from "firebase/app";
-import "firebase/auth";
+import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 
 export default {
   name: "ForgotPassword",
@@ -50,9 +49,8 @@ export default {
   methods: {
     resetPassword() {
       this.loading = true;
-      firebase
-        .auth()
-        .sendPasswordResetEmail(this.email)
+      const auth = getAuth();
+      sendPasswordResetEmail(auth, this.email)
         .then(() => {
           this.modalMessage =
             "If your account exists, you will recieve a email";

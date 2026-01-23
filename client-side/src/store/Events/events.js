@@ -32,18 +32,18 @@ export default {
   },
   actions: {
     getEvents({ commit }, cinemaId) {
-  // ✅ mos thirr API pa cinemaId
-  if (!cinemaId) {
-    commit("SET_EVENTS", []);
-    return Promise.resolve({ data: { result: [] } });
-  }
+      commit("SET_LOADING", true);
+      // If no cinemaId, we should ideally have a global endpoint
+      // For now, let's try a generic events endpoint if it exists or use a fallback
+      const url = cinemaId ? `cinemas/${cinemaId}/events` : `cinemas/1/events/all`;
 
-  commit("SET_LOADING", true);
-  return new Promise((resolve, reject) => {
-    api("movies")
-      .get(`cinemas/${cinemaId}/events`)
-      .then((response) => {
-        commit("SET_EVENTS", response.data.result);
+      return new Promise((resolve, reject) => {
+        api("movies")
+          .get(url)
+          .then((response) => {
+        // FastAPI mund të kthejë listën direkt ose të mbështjellë në {result: ...}
+        const events = response.data.result !== undefined ? response.data.result : response.data;
+        commit("SET_EVENTS", events);
         resolve(response);
       })
       .catch((error) => {
@@ -66,7 +66,8 @@ export default {
     api("movies")
       .get(`cinemas/${query.cinemaId}/events/${query.eventId}`)
       .then((response) => {
-        commit("SET_EVENT", response.data.result);
+        const event = response.data.result !== undefined ? response.data.result : response.data;
+        commit("SET_EVENT", event);
         resolve(response);
       })
       .catch((error) => {
