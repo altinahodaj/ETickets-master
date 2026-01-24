@@ -172,6 +172,8 @@ class MovieTime(Base):
 
     deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    hall: Mapped["Hall"] = relationship(lazy="selectin")
+
 
 class Row(Base):
     __tablename__ = "rows"

@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
+from typing import Optional, List
 
 from app.db.session import get_db
 from app.db import models
-from app.schemas.movies import MovieCreate, MovieResponse
+from app.schemas.movies import MovieCreate, MovieResponse, MovieListResponse
 
 router = APIRouter(prefix="/api/cinemas/{cinema_id}/movies", tags=["movies"])
+public_router = APIRouter(prefix="/api/movies", tags=["public-movies"])
+
 
 
 def attach_review_stats(db: Session, movies: list[models.Movie]):
@@ -41,7 +44,7 @@ def attach_review_stats(db: Session, movies: list[models.Movie]):
         setattr(m, "total_reviews", stats["total_reviews"])
 
 
-@router.get("")
+@router.get("", response_model=MovieListResponse)
 def list_movies(cinema_id: int, db: Session = Depends(get_db)):
     cinema = (
         db.query(models.Cinema)
@@ -59,28 +62,63 @@ def list_movies(cinema_id: int, db: Session = Depends(get_db)):
     )
 
     attach_review_stats(db, movies)
+    
+    # Sigurohemi që çdo movie ka fushën 'actors' si listë boshe për momentin
+    for m in movies:
+        if not hasattr(m, "actors") or m.actors is None:
+            setattr(m, "actors", [])
 
-    return {"result": movies, "errors": [], "messages": []}
+    return MovieListResponse(result=movies).model_dump(by_alias=True)
 
 
-@router.get("/{movie_id}")
-def get_movie(cinema_id: int, movie_id: int, db: Session = Depends(get_db)):
+@router.get("/{movie_id}", response_model=dict)
+def get_movie(movie_id: int, cinema_id: Optional[int] = None, db: Session = Depends(get_db)):
+    query = db.query(models.Movie).options(joinedload(models.Movie.photos))
+    
+    if cinema_id:
+        query = query.filter(models.Movie.cinema_id == cinema_id)
+        
+    movie = query.filter(
+        models.Movie.id == movie_id,
+        models.Movie.deleted == False,
+    ).first()
+    
+    if not movie:
+        raise HTTPException(status_code=404, detail="Movie not found")
+
+    attach_review_stats(db, [movie])
+    
+    # Sigurohemi që actors të jetë listë (empty për tani)
+    if not hasattr(movie, "actors") or movie.actors is None:
+        setattr(movie, "actors", [])
+
+    return {
+        "result": MovieResponse.model_validate(movie).model_dump(by_alias=True),
+        "errors": [],
+        "messages": []
+    }
+
+
+@public_router.get("/{movie_id}", response_model=dict)
+def get_public_movie(movie_id: int, db: Session = Depends(get_db)):
     movie = (
         db.query(models.Movie)
         .options(joinedload(models.Movie.photos))
-        .filter(
-            models.Movie.id == movie_id,
-            models.Movie.cinema_id == cinema_id,
-            models.Movie.deleted == False,
-        )
+        .filter(models.Movie.id == movie_id, models.Movie.deleted == False)
         .first()
     )
     if not movie:
         raise HTTPException(status_code=404, detail="Movie not found")
 
     attach_review_stats(db, [movie])
+    if not hasattr(movie, "actors") or movie.actors is None:
+        setattr(movie, "actors", [])
 
-    return {"result": movie, "errors": [], "messages": []}
+    return {
+        "result": MovieResponse.model_validate(movie).model_dump(by_alias=True),
+        "errors": [],
+        "messages": []
+    }
 
 
 @router.post("", response_model=dict)

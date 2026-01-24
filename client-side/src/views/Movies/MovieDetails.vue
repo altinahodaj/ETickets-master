@@ -16,7 +16,7 @@
               >
                 <v-carousel-item v-for="(photo, i) in bannerList" :key="i">
                   <v-img
-                    :src="photo.img_client_path"
+                    :src="photo.imgClientPath || photo.img_client_path"
                     height="360"
                     cover
                     class="movie-banner"
@@ -237,7 +237,7 @@ export default {
       const photos = Array.isArray(this.movie?.photos) ? this.movie.photos : [];
 
       // Nëse ke shtuar në DB photo_type="banner", filtroji këtu:
-      const banners = photos.filter((p) => (p.photo_type || "").toLowerCase() === "banner");
+      const banners = photos.filter((p) => (p.photoType || p.photo_type || "").toLowerCase() === "banner");
       if (banners.length) return banners;
 
       // fallback: përdor foton e parë që ekziston

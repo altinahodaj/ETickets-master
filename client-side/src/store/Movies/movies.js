@@ -65,9 +65,15 @@ export default {
 
     getMovie({ commit }, query) {
       commit("SET_LOADING", true);
+      
+      // Nëse cinemaId është null ose undefined, përdorim rrugën publike
+      const url = (!query.cinemaId || query.cinemaId === "null") 
+        ? `movies/${query.movieId}` 
+        : `cinemas/${query.cinemaId}/movies/${query.movieId}`;
+
       return new Promise((resolve, reject) => {
         backendApi
-          .get(`cinemas/${query.cinemaId}/movies/${query.movieId}`)
+          .get(url)
           .then((response) => {
             commit("SET_MOVIE", response.data.result);
             resolve(response);

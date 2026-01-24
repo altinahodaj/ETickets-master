@@ -35,7 +35,7 @@
         <v-layout column align-center>
           <v-flex class="mt-5">
             <v-avatar size="100">
-              <img :src="user.photoURL" alt="logo" class="logo" />
+              <img :src="user.photoURL" alt="logo" class="logo rounded-circle" />
             </v-avatar>
             <p class="white--text subheading mt-1 text-center">
               {{ user.displayName }}

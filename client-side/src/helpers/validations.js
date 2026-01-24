@@ -36,11 +36,7 @@ export const min = extend("min", rule_min);
 
 export const max = extend("max", rule_max);
 
-export const minValueRule = extend("minValueRule", {
-  params: ["target"],
-  ...minValue,
-  message: "{_field_} must be equal or greater than {min}.",
-});
+export const minValueRule = extend("min_value", minValue);
 
 export const confirmed = extend("confirmed", rule_confirmed);
 

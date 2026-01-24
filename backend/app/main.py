@@ -8,9 +8,9 @@ from app.core.config import settings
 from app.db.session import engine
 
 from app.routers.cinemas import router as cinemas_router
-from app.routers.movies import router as movies_router
+from app.routers.movies import router as movies_router, public_router as public_movies_router
 from app.routers.halls import router as halls_router
-from app.routers.movie_times import router as movie_times_router
+from app.routers.movie_times import router as movie_times_router, public_router as public_movie_times_router
 from app.routers.seating import router as seating_router
 from app.routers.tickets import router as tickets_router
 #from app.routers.events import router as events_router
@@ -39,8 +39,10 @@ app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 app.include_router(photos_router)
 app.include_router(cinemas_router)
 app.include_router(movies_router)
+app.include_router(public_movies_router)
 app.include_router(halls_router)
 app.include_router(movie_times_router)
+app.include_router(public_movie_times_router)
 app.include_router(seating_router)
 app.include_router(tickets_router)
 app.include_router(events_router)

@@ -1,55 +1,56 @@
 <template>
-  <div>
-    <div v-if="loading"><loading-page /></div>
+  <div class="movie-actors-container">
+    <div v-if="loading" class="d-flex justify-center pa-10">
+      <v-progress-circular indeterminate color="primary"></v-progress-circular>
+    </div>
     <div v-else>
-      <v-sheet class="mx-auto" elevation="8">
-        <v-sheet
-          class="d-flex justify-content-center mx-auto"
-          elevation="10"
-          max-height="1000"
+      <div v-if="!actors || !actors.length" class="no-actors pa-10 text-center">
+        <v-icon size="64" color="grey lighten-1">mdi-account-off-outline</v-icon>
+        <h5 class="grey--text text--darken-1 mt-4">There are no actors listed for this movie yet.</h5>
+      </div>
+      
+      <v-slide-group
+        v-else
+        show-arrows="always"
+        class="py-4"
+      >
+        <v-slide-item
+          v-for="actor in actors"
+          :key="actor.id"
         >
-          <div v-if="!actors.length > 0">
-            <h5>There are no actors for this movie.</h5>
-          </div>
-          <v-container v-else>
-            <v-slide-group
-              class="d-flex justify-content-center ma-2"
-              active-class="success"
-              multiple
-              show-arrows="always"
+          <v-card
+            class="actor-card ma-4"
+            elevation="2"
+            @click="onActorClick(actor.id)"
+          >
+            <v-img
+              v-if="actor.photos && actor.photos.length"
+              :src="actor.photos[0].imgClientPath"
+              height="240"
+              cover
+              class="actor-image"
             >
-              <v-slide-item
-                v-for="actor in actors"
-                :key="actor.id"
-                class="mb-2 d-flex justify-content-center"
-              >
-                <div class="pa-4 ml-4 mr-4">
-                  <v-row justify="center">
-                    <v-card class="p-2 mx-auto" max-width="250" outlined>
-                      <div class="d-flex">
-                        <v-list-item-content>
-                          <div class="text-overline mb-4">
-                            <v-img
-                              height="200"
-                              width="200"
-                              :src="actor.photos[0].imgClientPath"
-                              class="avatar-image"
-                            ></v-img>
-                          </div>
-
-                          <v-list-item-title class="text-h6 mb-1">
-                            {{ actor.firstName }} {{ actor.lastName }}
-                          </v-list-item-title>
-                        </v-list-item-content>
-                      </div>
-                    </v-card>
-                  </v-row>
-                </div>
-              </v-slide-item>
-            </v-slide-group>
-          </v-container>
-        </v-sheet>
-      </v-sheet>
+              <template v-slot:placeholder>
+                <v-row class="fill-height ma-0" align="center" justify="center">
+                  <v-progress-circular indeterminate color="grey lighten-5"></v-progress-circular>
+                </v-row>
+              </template>
+            </v-img>
+            <v-img
+              v-else
+              src="/assets/app_files/Actors/default-actor.jpg"
+              height="240"
+              cover
+              class="actor-image grey lighten-3"
+            ></v-img>
+            
+            <v-card-text class="text-center pa-3">
+              <div class="actor-name">{{ actor.firstName }} {{ actor.lastName }}</div>
+              <div class="actor-role grey--text text-caption">Actor</div>
+            </v-card-text>
+          </v-card>
+        </v-slide-item>
+      </v-slide-group>
     </div>
   </div>
 </template>
@@ -59,23 +60,63 @@ export default {
   data() {
     return {};
   },
-  created() {},
-  watch: {
-    movie() {
-      return this.getMovieActors();
-    },
-  },
   computed: {
     loading() {
-      return this.$store.state.movieTimes.loading;
+      return this.$store.state.movies.loading;
     },
     movie() {
       return this.$store.state.movies.movie;
     },
     actors() {
-      return this.$store.state.movies.movie.actors;
+      return this.$store.state.movies.movie?.actors || [];
     },
   },
-  methods: {},
+  methods: {
+    onActorClick(actorId) {
+      this.$router.push({
+        name: "actor-details",
+        params: { id: actorId },
+      });
+    },
+  },
 };
 </script>
+
+<style scoped>
+.movie-actors-container {
+  width: 100%;
+}
+
+.actor-card {
+  width: 180px;
+  border-radius: 12px !important;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.actor-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.actor-image {
+  border-bottom: 3px solid #1867c0;
+}
+
+.actor-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.no-actors {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 150px;
+}
+</style>

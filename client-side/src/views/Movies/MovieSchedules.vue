@@ -1,78 +1,91 @@
 <template>
-  <div>
-    <div v-if="loading"><loading-page /></div>
+  <div class="movie-schedules-container">
+    <div v-if="loading" class="d-flex justify-center pa-10">
+      <v-progress-circular indeterminate color="primary"></v-progress-circular>
+    </div>
     <div v-else>
-      <h6>Select Schedule Date:</h6>
-      {{ selectedDate }}
-      <v-text-field
-        class="col-3"
-        v-model="selectedDate"
-        type="datetime-local"
-        label="Movie Schedule"
-        outlined
-        required
-      ></v-text-field>
-      <v-sheet class="mx-auto" elevation="8">
-        <v-sheet
-          class="d-flex justify-content-center mx-auto"
-          elevation="10"
-          max-height="1000"
+      <div class="date-picker-wrapper mb-10">
+        <v-row justify="center">
+          <v-col cols="12" sm="8" md="4" class="text-center">
+            <div class="date-label mb-2">Select Schedule Date:</div>
+            <v-text-field
+              v-model="selectedDate"
+              type="datetime-local"
+              label="Movie Schedule"
+              outlined
+              dense
+              hide-details
+              prepend-inner-icon="mdi-calendar-clock"
+              class="custom-date-field mx-auto"
+            ></v-text-field>
+          </v-col>
+        </v-row>
+      </div>
+
+      <div class="schedules-viewport d-flex justify-center">
+        <v-slide-group
+          active-class="success"
+          show-arrows="always"
+          class="py-4 centered-slide-group"
         >
-          <v-slide-group
-            class="d-flex justify-content-center ma-2"
-            active-class="success"
-            show-arrows="always"
+          <div v-if="!selectedDateMovieTimes.length" class="no-schedules pa-10 text-center w-100">
+            <v-icon size="64" color="grey lighten-1">mdi-clock-alert-outline</v-icon>
+            <h5 class="grey--text text--darken-1 mt-4">There are no movie schedules for this date.</h5>
+          </div>
+          
+          <v-slide-item
+            v-for="movieTime in selectedDateMovieTimes"
+            :key="movieTime.id"
           >
-            <div v-if="!selectedDateMovieTimes.length > 0">
-              <h5>There are no movie schedules at this time.</h5>
-            </div>
-            <v-slide-item
-              v-else
-              v-for="movieTime in selectedDateMovieTimes"
-              :key="movieTime.id"
-              class="mb-2 d-flex justify-content-center"
+            <v-card
+              class="ticket-card ma-6"
+              elevation="6"
+              @click="onDetailsClick(movieTime.id, movieTime.hall.id)"
             >
-              <div class="ml-4 mr-4">
-                <v-card
-                  @click="onDetailsClick(movieTime.id, movieTime.hall.id)"
-                  class="p-3 ma-2"
-                >
-                  <v-row align="center" justify="center">
-                    <v-card class="p-2 mx-auto" max-width="300" outlined>
-                      <div class="d-flex">
-                        <v-icon>confirmation_number</v-icon>
-                        <v-list-item three-line>
-                          <v-list-item-content>
-                            <div class="text-overline mb-4"></div>
-                            <v-list-item-title class="text-h5 mb-1">
-                              Hall:
-                              {{
-                                (movieTime.hall && movieTime.hall.name) || "-"
-                              }}
-                            </v-list-item-title>
-                            <v-list-item-subtitle
-                              >Start Time:
-                              <b>
-                                {{ movieScheduleDateTime(movieTime.startTime) }}
-                              </b>
-                            </v-list-item-subtitle>
-                            <v-list-item-subtitle
-                              >End Time:
-                              <b>
-                                {{ movieScheduleDateTime(movieTime.endTime) }}
-                              </b>
-                            </v-list-item-subtitle>
-                          </v-list-item-content>
-                        </v-list-item>
-                      </div>
-                    </v-card>
-                  </v-row>
-                </v-card>
+              <div class="ticket-left">
+                <v-icon color="white" size="36">mdi-movie-open-play</v-icon>
+                <div class="text-center mt-1">
+                  <div class="ticket-hall-label">HALL</div>
+                  <div class="ticket-hall-name">{{ (movieTime.hall && movieTime.hall.name) || "Main Hall" }}</div>
+                </div>
               </div>
-            </v-slide-item>
-          </v-slide-group>
-        </v-sheet>
-      </v-sheet>
+              
+              <div class="ticket-main">
+                <v-row no-gutters align="center" class="fill-height">
+                  <v-col cols="12" md="8" class="pa-4 d-flex align-center">
+                    <div class="ticket-info-wrap">
+                      <div class="time-unit">
+                        <span class="time-unit-label">STARTS</span>
+                        <span class="time-unit-value">{{ movieScheduleDateTime(movieTime.startTime) }}</span>
+                      </div>
+                      <div class="ticket-divider mx-4"></div>
+                      <div class="time-unit">
+                        <span class="time-unit-label">ENDS</span>
+                        <span class="time-unit-value">{{ movieScheduleDateTime(movieTime.endTime) }}</span>
+                      </div>
+                    </div>
+                  </v-col>
+                  
+                  <v-col cols="12" md="4" class="fill-height pa-0">
+                    <v-btn 
+                      block 
+                      height="100%"
+                      color="primary" 
+                      class="book-btn-ticket" 
+                      tile
+                      elevation="0"
+                      @click.stop="onDetailsClick(movieTime.id, movieTime.hall.id)"
+                    >
+                      <v-icon left>mdi-ticket-confirmation</v-icon>
+                      BOOK NOW
+                    </v-btn>
+                  </v-col>
+                </v-row>
+              </div>
+            </v-card>
+          </v-slide-item>
+        </v-slide-group>
+      </div>
     </div>
   </div>
 </template>
@@ -116,12 +129,14 @@ export default {
   methods: {
     onClg() {},
     onDetailsClick(movieTimeId, hallId) {
+      if (!this.movie || !this.movie.id) return;
+      
       this.$router.push({
         name: "MovieTime-Details",
         params: {
-          cinemaId: this.cinema.id,
+          cinemaId: this.cinema ? this.cinema.id : "0", // Fallback if no cinema context
           movieId: this.movie.id,
-          hallId,
+          hallId: hallId,
           movieTimeId: movieTimeId,
         },
       });
@@ -129,3 +144,152 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.movie-schedules-container {
+  width: 100%;
+}
+
+.date-label {
+  font-weight: 700;
+  font-size: 16px;
+  color: #444;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.custom-date-field {
+  max-width: 350px;
+}
+
+.centered-slide-group >>> .v-slide-group__content {
+  justify-content: center;
+}
+
+/* TICKET STYLING */
+.ticket-card {
+  width: 650px;
+  height: 140px;
+  display: flex !important;
+  flex-direction: row;
+  border-radius: 16px !important;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: none;
+  background: white;
+  cursor: pointer;
+}
+
+.ticket-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+.ticket-left {
+  background: linear-gradient(135deg, #1867c0, #5cb860);
+  width: 160px;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  position: relative;
+  padding: 10px;
+}
+
+/* Punch holes effect */
+.ticket-left::after, .ticket-left::before {
+  content: '';
+  position: absolute;
+  right: -10px;
+  width: 20px;
+  height: 20px;
+  background-color: #fafafa;
+  border-radius: 50%;
+  z-index: 2;
+}
+.ticket-left::before { top: -10px; }
+.ticket-left::after { bottom: -10px; }
+
+.ticket-hall-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  opacity: 0.8;
+}
+
+.ticket-hall-name {
+  font-size: 18px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.ticket-main {
+  flex-grow: 1;
+  background: white;
+}
+
+.ticket-info-wrap {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  justify-content: space-around;
+}
+
+.time-unit {
+  display: flex;
+  flex-direction: column;
+}
+
+.time-unit-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #bbb;
+  letter-spacing: 1px;
+}
+
+.time-unit-value {
+  font-size: 17px;
+  font-weight: 700;
+  color: #333;
+}
+
+.ticket-divider {
+  width: 1px;
+  height: 40px;
+  background-color: #eee;
+}
+
+.book-btn-ticket {
+  font-weight: 800 !important;
+  letter-spacing: 1px;
+  font-size: 16px !important;
+  border-left: 2px dashed #eee !important;
+}
+
+.no-schedules {
+  background: rgba(0,0,0,0.02);
+  border-radius: 20px;
+  border: 2px dashed #eee;
+}
+
+@media (max-width: 768px) {
+  .ticket-card {
+    width: 320px;
+    height: auto;
+    flex-direction: column;
+  }
+  .ticket-left {
+    width: 100%;
+    height: 80px;
+  }
+  .ticket-left::before, .ticket-left::after {
+    display: none;
+  }
+  .book-btn-ticket {
+    border-left: none !important;
+    border-top: 2px dashed #eee !important;
+  }
+}
+</style>

@@ -2,6 +2,7 @@
 .env
 backend/.env
 client-side/.env
+node/serviceAccountKey.json
 
 # python cache
 __pycache__/

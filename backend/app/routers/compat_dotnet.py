@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.db.session import get_db
 from app.db import models
+from app.schemas.movies import MovieResponse
 
 router = APIRouter(prefix="/api", tags=["compat_dotnet"])
 
@@ -37,23 +38,35 @@ def dotnet_cinema(cinema_id: int, db: Session = Depends(get_db)):
 def dotnet_movies(db: Session = Depends(get_db)):
     movies = (
         db.query(models.Movie)
+        .options(joinedload(models.Movie.photos))
         .filter(models.Movie.deleted == False)
         .all()
     )
-    return {"result": movies}
+    result = []
+    for m in movies:
+        if not hasattr(m, "actors") or m.actors is None:
+            setattr(m, "actors", [])
+        result.append(MovieResponse.model_validate(m).model_dump(by_alias=True))
+    return {"result": result}
 
 
 @router.get("/cinemas/{cinema_id}/movies")
 def dotnet_cinema_movies(cinema_id: int, db: Session = Depends(get_db)):
     movies = (
         db.query(models.Movie)
+        .options(joinedload(models.Movie.photos))
         .filter(
             models.Movie.cinema_id == cinema_id,
             models.Movie.deleted == False,
         )
         .all()
     )
-    return {"result": movies}
+    result = []
+    for m in movies:
+        if not hasattr(m, "actors") or m.actors is None:
+            setattr(m, "actors", [])
+        result.append(MovieResponse.model_validate(m).model_dump(by_alias=True))
+    return {"result": result}
 
 
 # -----------------------------
@@ -63,6 +76,7 @@ def dotnet_cinema_movies(cinema_id: int, db: Session = Depends(get_db)):
 def dotnet_events(db: Session = Depends(get_db)):
     events = (
         db.query(models.MovieTime)
+        .options(joinedload(models.MovieTime.hall))
         .filter(models.MovieTime.deleted == False)
         .all()
     )
@@ -73,6 +87,7 @@ def dotnet_events(db: Session = Depends(get_db)):
 def dotnet_cinema_events(cinema_id: int, db: Session = Depends(get_db)):
     events = (
         db.query(models.MovieTime)
+        .options(joinedload(models.MovieTime.hall))
         .filter(
             models.MovieTime.cinema_id == cinema_id,
             models.MovieTime.deleted == False,

@@ -29,9 +29,9 @@
       </div>
 
       <!-- Release year (vetëm nëse ekziston) -->
-      <span v-if="!hideDetails && movie.release_year" class="pa-1 d-flex align-center">
+      <span v-if="!hideDetails && (movie.releaseYear || movie.release_year)" class="pa-1 d-flex align-center">
         <span class="ml-2 mr-2 align-center">Release Year:</span>
-        {{ movie.release_year }}
+        {{ movie.releaseYear || movie.release_year }}
       </span>
 
       <!-- Country / Language (pa undefined) -->
@@ -98,20 +98,21 @@ export default {
 
     posterSrc() {
       const photos = this.movie?.photos || [];
-      if (photos.length > 0 && photos[0]?.img_client_path) {
-        return photos[0].img_client_path;
+      if (photos.length > 0) {
+        const p = photos[0];
+        return p.imgClientPath || p.img_client_path || "http://127.0.0.1:8000/assets/app_files/Movies/default-image.jpg";
       }
       return "http://127.0.0.1:8000/assets/app_files/Movies/default-image.jpg";
     },
 
-    // ✅ backend po i kthen: avg_rating, total_reviews
+    // ✅ backend po i kthen: avgRating/avg_rating, totalReviews/total_reviews
     avgRating() {
-      const v = Number(this.movie?.avg_rating ?? 0);
+      const v = Number(this.movie?.avgRating ?? this.movie?.avg_rating ?? 0);
       return Number.isFinite(v) ? v : 0;
     },
 
     totalReviews() {
-      const v = Number(this.movie?.total_reviews ?? 0);
+      const v = Number(this.movie?.totalReviews ?? this.movie?.total_reviews ?? 0);
       return Number.isFinite(v) ? v : 0;
     },
 
