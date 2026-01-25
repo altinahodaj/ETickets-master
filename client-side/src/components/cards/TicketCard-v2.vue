@@ -11,22 +11,21 @@
       />
     </div>
     <div class="poster">
-      <img
-        src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/25240/only-god-forgives.jpg"
-        alt="Movie: Only God Forgives"
-      />
+      <img :src="posterSrc" :alt="posterAlt" @error="onPosterError" />
     </div>
     <div class="ticket-info">
       <table>
         <tr>
           <th>SCREEN</th>
           <th>ROW</th>
+          <th>SEAT</th>
           <th>TYPE</th>
         </tr>
         <tr>
-          <td class="bigger">18</td>
-          <td class="bigger">H</td>
-          <td class="bigger">{{ ticket.is3D ? "3D" : "2D" }}</td>
+          <td class="bigger">{{ screenLabel }}</td>
+          <td class="bigger">{{ rowLabel }}</td>
+          <td class="bigger">{{ seatLabel }}</td>
+          <td class="bigger">{{ is3D ? "3D" : "2D" }}</td>
         </tr>
       </table>
       <table>
@@ -37,7 +36,7 @@
         <tr>
           <td class="bigger">{{ ticket.price }}€</td>
           <td class="bigger">
-            {{ movieScheduleDateTime(ticket.movieStartTime) }}
+            {{ movieScheduleDateTime(movieStartTime) }}
           </td>
         </tr>
       </table>
@@ -61,11 +60,81 @@ export default {
     };
   },
   computed: {
+    moviesBaseUrl() {
+      // FastAPI base (also where /assets is mounted)
+      return process.env.VUE_APP_MOVIES_ENV || "http://127.0.0.1:8000";
+    },
+    movieTitle() {
+      return this.ticket.movieTitle || this.ticket.movie_title || "";
+    },
+    titlePosterSrc() {
+      const title = String(this.movieTitle || "").toLowerCase();
+      if (!title) return "";
+
+      // Local Vue public assets
+      if (title.includes("interstellar")) return "/assets/app_files/Movies/interstellar-cover.jpg.jpg";
+      if (title.includes("terminator")) return "/assets/app_files/Movies/terminator.jpg.jpg";
+      if (title.includes("minions")) return "/assets/app_files/Movies/minions-rise-of-gru.jpg.jpg";
+      if (title.includes("thor")) return "/assets/app_files/Movies/Thor-Love-and-Thunder-2.jpg.jpg";
+
+      // Zootopia image currently exists under backend assets
+      if (title.includes("zootopia")) {
+        return `${this.moviesBaseUrl}/assets/app_files/Movies/zootopia_landscape.jpg`;
+      }
+
+      // The Housemaid images exist under backend assets
+      if (title.includes("housemaid") || title.includes("house maid") || title.includes("the housemaid")) {
+        return `${this.moviesBaseUrl}/assets/app_files/Movies/thehousemaid_landscape.jpg`;
+      }
+
+      return "";
+    },
+    posterSrc() {
+      return (
+        this.ticket.moviePosterUrl ||
+        this.ticket.movie_poster_url ||
+        this.ticket.moviePoster ||
+        this.ticket.movie_poster ||
+        this.ticket.imgClientPath ||
+        this.ticket.img_client_path ||
+        this.titlePosterSrc ||
+        "/assets/app_files/Movies/default-image.jpg"
+      );
+    },
+    posterAlt() {
+      return this.movieTitle ? `Movie: ${this.movieTitle}` : "Movie poster";
+    },
     shortBarcode() {
-      return this.ticket.ticketCode.substring(0, 11);
+      const code = this.ticket.ticketCode || this.ticket.ticket_code || "";
+      return code ? code.substring(0, 11) : "";
+    },
+    is3D() {
+      return Boolean(
+        this.ticket.is3D !== undefined ? this.ticket.is3D : this.ticket.is_3d
+      );
+    },
+    movieStartTime() {
+      return this.ticket.movieStartTime || this.ticket.movie_start_time || null;
+    },
+    screenLabel() {
+      const hallNumber = this.ticket.hallNumber;
+      const hallId = this.ticket.hallId !== undefined ? this.ticket.hallId : this.ticket.hall_id;
+      return hallNumber !== null && hallNumber !== undefined ? hallNumber : (hallId || "-");
+    },
+    rowLabel() {
+      return this.ticket.rowName || this.ticket.row_name || "-";
+    },
+    seatLabel() {
+      return this.ticket.seatName || this.ticket.seat_name || "-";
     },
   },
-  methods: {},
+  methods: {
+    onPosterError(e) {
+      if (e && e.target) {
+        e.target.src = "/assets/app_files/Movies/default-image.jpg";
+      }
+    },
+  },
   filters: {
     truncate: function (text, length, suffix) {
       if (text.length > length) {

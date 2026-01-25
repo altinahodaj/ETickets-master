@@ -14,7 +14,7 @@ export default {
     },
   },
   mutations: {
-    SET_LOADING(state, value) {
+    SET_REVIEWS_LOADING(state, value) {
       state.loading = value;
     },
     SET_REVIEWS(state, payload) {
@@ -32,7 +32,7 @@ export default {
   },
   actions: {
     getReviews({ commit }, query) {
-  		commit("SET_LOADING", true);
+  		commit("SET_REVIEWS_LOADING", true);
   		return new Promise((resolve, reject) => {
     		api("movies")
       		.get(`movies/${query.movieId}/reviews`)
@@ -58,12 +58,12 @@ export default {
         		resolve(response);
       		})
       		.catch((error) => reject(error))
-      		.finally(() => commit("SET_LOADING", false));
+      		.finally(() => commit("SET_REVIEWS_LOADING", false));
   		});
 	},
 
     removeReview({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_REVIEWS_LOADING", true);
       return new Promise((resolve, reject) => {
         api("movies")
           .delete(`movies/${query.movieId}/reviews/${query.reviewId}`)
@@ -73,13 +73,13 @@ export default {
           })
           .catch((error) => reject(error))
           .finally(() => {
-            commit("SET_LOADING", false);
+            commit("SET_REVIEWS_LOADING", false);
           });
       });
     },
 
     createReview({ commit }, query) {
-  commit("SET_LOADING", true);
+  commit("SET_REVIEWS_LOADING", true);
   return new Promise((resolve, reject) => {
     api("movies")
       .post(`movies/${query.movieId}/reviews`, query.review)
@@ -91,7 +91,7 @@ export default {
         reject(error);
       })
       .finally(() => {
-        commit("SET_LOADING", false);
+        commit("SET_REVIEWS_LOADING", false);
       });
   });
 },

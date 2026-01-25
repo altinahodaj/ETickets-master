@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-
+from sqlalchemy.orm import Session, joinedload
 from app.db.session import get_db
 from app.db import models
+from app.schemas.halls import HallResponse
 
 router = APIRouter(prefix="/api/cinemas/{cinema_id}/halls", tags=["halls"])
 
-@router.get("")
+@router.get("", response_model=dict)
 def list_halls(cinema_id: int, db: Session = Depends(get_db)):
     cinema = db.query(models.Cinema).filter(models.Cinema.id == cinema_id).first()
     if not cinema or cinema.deleted:
@@ -14,15 +14,18 @@ def list_halls(cinema_id: int, db: Session = Depends(get_db)):
 
     halls = (
         db.query(models.Hall)
+        .options(joinedload(models.Hall.rows).joinedload(models.Row.seats))
         .filter(models.Hall.cinema_id == cinema_id, models.Hall.deleted == False)
         .all()
     )
-    return {"result": halls, "errors": [], "messages": []}
+    result = [HallResponse.model_validate(h).model_dump(by_alias=True) for h in halls]
+    return {"result": result, "errors": [], "messages": []}
 
-@router.get("/{hall_id}")
+@router.get("/{hall_id}", response_model=dict)
 def get_hall(cinema_id: int, hall_id: int, db: Session = Depends(get_db)):
     hall = (
         db.query(models.Hall)
+        .options(joinedload(models.Hall.rows).joinedload(models.Row.seats))
         .filter(
             models.Hall.id == hall_id,
             models.Hall.cinema_id == cinema_id
@@ -32,7 +35,11 @@ def get_hall(cinema_id: int, hall_id: int, db: Session = Depends(get_db)):
     if not hall or hall.deleted:
         raise HTTPException(status_code=404, detail="Hall not found")
 
-    return {"result": hall, "errors": [], "messages": []}
+    return {
+        "result": HallResponse.model_validate(hall).model_dump(by_alias=True),
+        "errors": [],
+        "messages": []
+    }
 
 @router.post("")
 def create_hall(cinema_id: int, payload: dict, db: Session = Depends(get_db)):

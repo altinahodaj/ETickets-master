@@ -13,10 +13,13 @@
     </v-parallax>
     <div>
       <h1 class="d-flex justify-content-center">My tickets</h1>
-      <div class="d-flex flex-wrap" v-if="userTickets.length > 0">
+      <div v-if="!currentUser || !currentUser.id" class="d-flex justify-content-center">
+        <h3>Please login to see your tickets</h3>
+      </div>
+      <div class="d-flex flex-wrap" v-if="displayTickets.length > 0">
         <div
           class="d-flex flex-wrap mb-15"
-          v-for="ticket in userTickets"
+          v-for="ticket in displayTickets"
           :key="ticket.id"
         >
           <div class="container ml-2 mr-2">
@@ -24,7 +27,7 @@
           </div>
         </div>
       </div>
-      <div v-else>
+      <div v-else-if="currentUser && currentUser.id">
         <h3>You havent bought any tickets</h3>
       </div>
     </div>
@@ -37,10 +40,21 @@ import TicketCardV2 from "@/components/cards/TicketCard-v2.vue";
 export default {
   components: { TicketCardV2 },
   data() {
-    return {};
+    return {
+      fetched: false,
+    };
   },
-  created() {
-    this.getUserTickets();
+  watch: {
+    currentUser: {
+      immediate: true,
+      handler(u) {
+        if (this.fetched) return;
+        if (u && u.id) {
+          this.getUserTickets();
+          this.fetched = true;
+        }
+      },
+    },
   },
   computed: {
     loading() {
@@ -49,12 +63,27 @@ export default {
     userTickets() {
       return this.$store.state.tickets.userTickets;
     },
+    displayTickets() {
+      const list = this.userTickets || [];
+      if (!list.length) return [];
+
+      // Backend returns tickets sorted by createdAt desc.
+      // We treat createdAt as "reservation time" so tickets with the same timestamp
+      // belong to the same (latest) purchase.
+      const latestTs = String(list[0]?.createdAt || list[0]?.created_at || "");
+      if (!latestTs) return list;
+
+      return list.filter(
+        (t) => String(t?.createdAt || t?.created_at || "") === latestTs
+      );
+    },
     currentUser() {
       return this.$store.state.users.user;
     },
   },
   methods: {
     getUserTickets() {
+      if (!this.currentUser || !this.currentUser.id) return;
       const query = {
         userId: this.currentUser.id,
       };

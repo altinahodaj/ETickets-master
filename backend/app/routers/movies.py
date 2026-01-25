@@ -8,7 +8,7 @@ from app.db import models
 from app.schemas.movies import MovieCreate, MovieResponse, MovieListResponse
 
 router = APIRouter(prefix="/api/cinemas/{cinema_id}/movies", tags=["movies"])
-public_router = APIRouter(prefix="/api/movies", tags=["public-movies"])
+public_router = APIRouter(prefix="/api/movies", tags=["public-movies"], include_in_schema=False)
 
 
 

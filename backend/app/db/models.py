@@ -157,6 +157,8 @@ class Hall(Base):
 
     deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    rows: Mapped[list["Row"]] = relationship("Row", back_populates="hall", lazy="selectin")
+
 
 class MovieTime(Base):
     __tablename__ = "movie_times"
@@ -188,6 +190,9 @@ class Row(Base):
 
     deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    hall: Mapped["Hall"] = relationship("Hall", back_populates="rows")
+    seats: Mapped[list["Seat"]] = relationship("Seat", back_populates="row", lazy="selectin")
+
     __table_args__ = (
         UniqueConstraint("hall_id", "row_name", name="uq_rows_hall_rowname"),
     )
@@ -206,6 +211,8 @@ class Seat(Base):
     is_couple_seat: Mapped[bool] = mapped_column(Boolean, default=False)
 
     deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    row: Mapped["Row"] = relationship("Row", back_populates="seats")
 
     __table_args__ = (
         UniqueConstraint("row_id", "seat_name", name="uq_seats_row_seatname"),

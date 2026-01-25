@@ -2,8 +2,8 @@
 import axios from "axios";
 
 export const subdomains = {
-  node: process.env.VUE_APP_NODE_ENV,
-  movies: process.env.VUE_APP_MOVIES_ENV,
+  node: process.env.VUE_APP_NODE_ENV || "http://127.0.0.1:3000",
+  movies: process.env.VUE_APP_MOVIES_ENV || "http://127.0.0.1:8000",
 };
 
 

@@ -11,6 +11,12 @@ class UserResponse(BaseModel):
     id: str
     email: EmailStr
     username: str | None
+    is_admin: bool = Field(False, alias="isAdmin")
+
+    model_config = {
+        "populate_by_name": True,
+        "from_attributes": True
+    }
 
 class LoginRequest(BaseModel):
     email: EmailStr

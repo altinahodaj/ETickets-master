@@ -2,7 +2,7 @@ import api from "@/libs/api";
 
 export default {
 state: {
-loading: true,
+loading: false,
 loggedIn: false,
 error: false,
 errorMsg: null,
@@ -12,7 +12,7 @@ user: null, // ✅ jo {} por null kur s'ka user
 },
 
 mutations: {
-SET_LOADING(state, value) {
+SET_USERS_LOADING(state, value) {
 state.loading = value;
 },
 SET_LOGGED_IN(state, value) {
@@ -32,7 +32,7 @@ state.user = payload; // ✅ këtu e vendosim user-in nga Firebase
 
 actions: {
 getUsers({ commit }) {
-commit("SET_LOADING", true);
+commit("SET_USERS_LOADING", true);
 return new Promise((resolve, reject) => {
 api("node")
 .get(`users`)
@@ -41,12 +41,12 @@ commit("SET_USERS", response.data);
 resolve(response);
 })
 .catch((error) => reject(error))
-.finally(() => commit("SET_LOADING", false));
+.finally(() => commit("SET_USERS_LOADING", false));
 });
 },
 
 getUser({ commit }, id) {
-commit("SET_LOADING", true);
+commit("SET_USERS_LOADING", true);
 return new Promise((resolve, reject) => {
 api("node")
 .get(`users/${id}`)
@@ -55,12 +55,12 @@ commit("SET_USER", response.data);
 resolve(response);
 })
 .catch((error) => reject(error))
-.finally(() => commit("SET_LOADING", false));
+.finally(() => commit("SET_USERS_LOADING", false));
 });
 },
 
 makeAdmin({ commit }, id) {
-commit("SET_LOADING", true);
+commit("SET_USERS_LOADING", true);
 return new Promise((resolve, reject) => {
 api("node")
 .put(`users/${id}/makeAdmin`)
@@ -69,12 +69,12 @@ commit("SET_USER", response.data);
 resolve(response);
 })
 .catch((error) => reject(error))
-.finally(() => commit("SET_LOADING", false));
+.finally(() => commit("SET_USERS_LOADING", false));
 });
 },
 
 removeAdmin({ commit }, id) {
-commit("SET_LOADING", true);
+commit("SET_USERS_LOADING", true);
 return new Promise((resolve, reject) => {
 api("node")
 .put(`users/${id}/removeAdmin`)
@@ -83,12 +83,12 @@ commit("SET_USER", response.data);
 resolve(response);
 })
 .catch((error) => reject(error))
-.finally(() => commit("SET_LOADING", false));
+.finally(() => commit("SET_USERS_LOADING", false));
 });
 },
 
 addUser({ commit }, query) {
-commit("SET_LOADING", true);
+commit("SET_USERS_LOADING", true);
 return new Promise((resolve, reject) => {
 api("node")
 .post(`users`, query)
@@ -97,7 +97,7 @@ commit("SET_USER", response.data.result);
 resolve(response);
 })
 .catch((error) => reject(error))
-.finally(() => commit("SET_LOADING", false));
+.finally(() => commit("SET_USERS_LOADING", false));
 });
 },
 },

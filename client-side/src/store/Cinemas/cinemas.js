@@ -9,7 +9,7 @@ export default {
     cinema: {},
   },
   mutations: {
-    SET_LOADING(state, value) {
+    SET_CINEMAS_LOADING(state, value) {
       state.loading = value;
     },
     SET_CINEMAS(state, payload) {

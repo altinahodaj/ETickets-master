@@ -9,7 +9,7 @@ export default {
     movieTime: {},
   },
   mutations: {
-    SET_LOADING(state, value) {
+    SET_MOVIETIMES_LOADING(state, value) {
       state.loading = value;
     },
     SET_MOVIETIMES(state, payload) {
@@ -27,7 +27,7 @@ export default {
   },
   actions: {
     getMovieTimes({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_MOVIETIMES_LOADING", true);
       
       const url = (!query.cinemaId || query.cinemaId === "null")
         ? `movies/${query.movieId}/movie-times`
@@ -44,12 +44,12 @@ export default {
             reject(error);
           })
           .finally(() => {
-            commit("SET_LOADING", false);
+            commit("SET_MOVIETIMES_LOADING", false);
           });
       });
     },
     getMovieTime({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_MOVIETIMES_LOADING", true);
       return new Promise((resolve, reject) => {
         api("movies")
           .get(
@@ -63,12 +63,12 @@ export default {
             reject(error);
           })
           .finally(() => {
-            commit("SET_LOADING", false);
+            commit("SET_MOVIETIMES_LOADING", false);
           });
       });
     },
     removeMovieTime({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_MOVIETIMES_LOADING", true);
       return new Promise((resolve, reject) => {
         api("movies")
           .delete(
@@ -82,12 +82,12 @@ export default {
             reject(error);
           })
           .finally(() => {
-            commit("SET_LOADING", false);
+            commit("SET_MOVIETIMES_LOADING", false);
           });
       });
     },
     createMovieTime({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_MOVIETIMES_LOADING", true);
       return new Promise((resolve, reject) => {
         api("movies")
           .post(
@@ -102,7 +102,7 @@ export default {
             reject(error);
           })
           .finally(() => {
-            commit("SET_LOADING", false);
+            commit("SET_MOVIETIMES_LOADING", false);
           });
       });
     },

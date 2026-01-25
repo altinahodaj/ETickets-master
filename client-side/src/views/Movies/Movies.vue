@@ -61,13 +61,17 @@ export default {
       });
     },
     getMovies() {
+      // Përdorim cinemaId nga Route direkt, jo nga state që mund të jetë bosh në fillim
+      const cId = this.cinemaId || this.cinema?.id;
+      
       this.$store
-        .dispatch("getMovies", this.cinema.id)
+        .dispatch("getMovies", cId)
         .then(() => {})
         .catch((error) => {
           console.log(error);
           this.errorToast(
-            error.response?.data?.errors[0] ||
+            error.response?.data?.errors?.[0] ||
+            (error.response?.data?.detail?.[0]?.msg ? "API Error: " + error.response.data.detail[0].msg : null) ||
               "Something went wrong while fetching movies!"
           );
         });

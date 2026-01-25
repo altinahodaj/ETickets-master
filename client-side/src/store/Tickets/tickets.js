@@ -9,7 +9,7 @@ export default {
     ticket: {},
   },
   mutations: {
-    SET_LOADING(state, value) {
+    SET_TICKETS_LOADING(state, value) {
       state.loading = value;
     },
     SET_TICKETS(state, payload) {
@@ -24,7 +24,7 @@ export default {
   },
   actions: {
     getTickets({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_TICKETS_LOADING", true);
       return new Promise((resolve, reject) => {
         api("movies")
           .get(
@@ -38,12 +38,30 @@ export default {
             reject(error);
           })
           .finally(() => {
-            commit("SET_LOADING", false);
+            commit("SET_TICKETS_LOADING", false);
+          });
+      });
+    },
+    generateTickets({ commit }, query) {
+      commit("SET_TICKETS_LOADING", true);
+      return new Promise((resolve, reject) => {
+        api("movies")
+          .post(
+            `cinemas/${query.cinemaId}/halls/${query.hallId}/movieTimes/${query.movieTimeId}/generate-tickets`
+          )
+          .then((response) => {
+            resolve(response);
+          })
+          .catch((error) => {
+            reject(error);
+          })
+          .finally(() => {
+            commit("SET_TICKETS_LOADING", false);
           });
       });
     },
     getUserTickets({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_TICKETS_LOADING", true);
       return new Promise((resolve, reject) => {
         api("movies")
           .get(`cinemas/0/halls/0/user-tickets/${query.userId}`)
@@ -55,12 +73,12 @@ export default {
             reject(error);
           })
           .finally(() => {
-            commit("SET_LOADING", false);
+            commit("SET_TICKETS_LOADING", false);
           });
       });
     },
     getTicket({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_TICKETS_LOADING", true);
       return new Promise((resolve, reject) => {
         api("movies")
           .get(
@@ -74,12 +92,12 @@ export default {
             reject(error);
           })
           .finally(() => {
-            commit("SET_LOADING", false);
+            commit("SET_TICKETS_LOADING", false);
           });
       });
     },
     reserveTickets({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_TICKETS_LOADING", true);
       return new Promise((resolve, reject) => {
         api("movies")
           .put(
@@ -94,7 +112,7 @@ export default {
             reject(error);
           })
           .finally(() => {
-            commit("SET_LOADING", false);
+            commit("SET_TICKETS_LOADING", false);
           });
       });
     },

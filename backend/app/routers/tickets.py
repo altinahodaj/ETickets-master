@@ -221,11 +221,14 @@ def reserve_tickets_dotnet_style(
     movie_time_id: int,
     payload: ReserveTicketsDotnetRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
     ticket_ids = payload.ticketsId
     if not ticket_ids:
         raise HTTPException(status_code=400, detail="ticketsId is required")
+
+    owner_id = (payload.ownerId or "").strip() if payload.ownerId else None
+    if not owner_id:
+        raise HTTPException(status_code=400, detail="ownerId is required")
 
     tickets = (
         db.query(models.Ticket)
@@ -247,10 +250,13 @@ def reserve_tickets_dotnet_style(
         if not t.is_available or t.owner_id is not None:
             raise HTTPException(status_code=400, detail=f"Ticket {t.id} is already reserved")
 
-    # rezervim: owner_id merret nga token
+    # rezervim: owner_id merret nga payload (Firebase UID)
+    reserved_at = datetime.utcnow()
     for t in tickets:
         t.is_available = False
-        t.owner_id = current_user.id
+        t.owner_id = owner_id
+        # Use created_at as "reservation time" for UI grouping (last purchase)
+        t.created_at = reserved_at
 
     db.commit()
 
@@ -275,6 +281,109 @@ def reserve_tickets_dotnet_style(
     ]
 
     return {"result": result, "errors": [], "messages": ["Tickets reserved successfully"]}
+
+
+
+# ----------------------------
+# User tickets (PUBLIC)
+# Frontend expects: /api/cinemas/0/halls/0/user-tickets/{userId}
+# If cinema_id/hall_id are 0, return all tickets for the user.
+# ----------------------------
+@router.get("/user-tickets/{user_id}")
+def user_tickets(
+    cinema_id: int,
+    hall_id: int,
+    user_id: str,
+    db: Session = Depends(get_db),
+):
+    q = (
+        db.query(
+            models.Ticket,
+            models.Seat,
+            models.Row,
+            models.MovieTime,
+            models.Hall,
+            models.Movie,
+            models.Cinema,
+        )
+        .join(models.Seat, models.Seat.id == models.Ticket.seat_id)
+        .join(models.Row, models.Row.id == models.Ticket.row_id)
+        .join(models.MovieTime, models.MovieTime.id == models.Ticket.movie_time_id)
+        .join(models.Hall, models.Hall.id == models.Ticket.hall_id)
+        .join(models.Movie, models.Movie.id == models.MovieTime.movie_id)
+        .join(models.Cinema, models.Cinema.id == models.Ticket.cinema_id)
+        .filter(
+            models.Ticket.owner_id == user_id,
+            models.Ticket.deleted == False,
+        )
+    )
+
+    if cinema_id and cinema_id != 0:
+        q = q.filter(models.Ticket.cinema_id == cinema_id)
+    if hall_id and hall_id != 0:
+        q = q.filter(models.Ticket.hall_id == hall_id)
+
+    rows = q.order_by(models.Ticket.created_at.desc()).all()
+
+    result = []
+    for t, seat, row, mt, hall, movie, cinema in rows:
+        item = {
+            # ids
+            "id": t.id,
+            "cinemaId": t.cinema_id,
+            "hallId": t.hall_id,
+            "movieTimeId": t.movie_time_id,
+            "rowId": t.row_id,
+            "seatId": t.seat_id,
+
+            # display helpers
+            "cinemaName": getattr(cinema, "name", None),
+            "hallName": getattr(hall, "name", None),
+            "hallNumber": getattr(hall, "hall_number", None),
+            "movieTitle": getattr(movie, "title", None),
+            "rowName": getattr(row, "row_name", None),
+            "seatName": getattr(seat, "seat_name", None),
+
+            # ticket
+            "ticketCode": t.ticket_code,
+            "ownerId": t.owner_id,
+            "isAvailable": t.is_available,
+            "is3D": t.is_3d,
+            "isVipTicket": t.is_vip_ticket,
+            "isCoupleTicket": t.is_couple_ticket,
+            "price": t.price,
+            "createdAt": t.created_at.isoformat() if t.created_at else None,
+
+            # movie time
+            "movieStartTime": mt.start_time.isoformat() if mt and mt.start_time else None,
+            "movieEndTime": mt.end_time.isoformat() if mt and mt.end_time else None,
+        }
+
+        # also include snake_case for older consumers
+        item.update(
+            {
+                "cinema_id": t.cinema_id,
+                "hall_id": t.hall_id,
+                "movie_time_id": t.movie_time_id,
+                "row_id": t.row_id,
+                "seat_id": t.seat_id,
+                "ticket_code": t.ticket_code,
+                "owner_id": t.owner_id,
+                "is_available": t.is_available,
+                "is_3d": t.is_3d,
+                "is_vip_ticket": t.is_vip_ticket,
+                "is_couple_ticket": t.is_couple_ticket,
+                "created_at": t.created_at.isoformat() if t.created_at else None,
+                "row_name": getattr(row, "row_name", None),
+                "seat_name": getattr(seat, "seat_name", None),
+                "movie_start_time": mt.start_time.isoformat() if mt and mt.start_time else None,
+                "movie_end_time": mt.end_time.isoformat() if mt and mt.end_time else None,
+            }
+        )
+
+        result.append(item)
+
+    return {"result": result, "errors": [], "messages": []}
 
 
 

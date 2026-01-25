@@ -9,7 +9,7 @@ export default {
     hall: {},
   },
   mutations: {
-    SET_LOADING(state, value) {
+    SET_HALLS_LOADING(state, value) {
       state.loading = value;
     },
     SET_HALLS(state, payload) {
@@ -27,7 +27,7 @@ export default {
   },
   actions: {
     getHalls({ commit }, cinemaId) {
-      commit("SET_LOADING", true);
+      commit("SET_HALLS_LOADING", true);
       return new Promise((resolve, reject) => {
         api("movies")
           .get(`cinemas/${cinemaId}/halls`)
@@ -39,12 +39,12 @@ export default {
             reject(error);
           })
           .finally(() => {
-            commit("SET_LOADING", false);
+            commit("SET_HALLS_LOADING", false);
           });
       });
     },
     getHall({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_HALLS_LOADING", true);
       return new Promise((resolve, reject) => {
         api("movies")
           .get(`cinemas/${query.cinemaId}/halls/${query.hallId}`)
@@ -56,12 +56,12 @@ export default {
             reject(error);
           })
           .finally(() => {
-            commit("SET_LOADING", false);
+            commit("SET_HALLS_LOADING", false);
           });
       });
     },
     removeHall({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_HALLS_LOADING", true);
       return new Promise((resolve, reject) => {
         api("movies")
           .delete(`cinemas/${query.cinemaId}/halls/${query.hallId}`)
@@ -73,12 +73,12 @@ export default {
             reject(error);
           })
           .finally(() => {
-            commit("SET_LOADING", false);
+            commit("SET_HALLS_LOADING", false);
           });
       });
     },
     editHall({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_HALLS_LOADING", true);
       return new Promise((resolve, reject) => {
         api("movies")
           .put(`cinemas/${query.cinemaId}/halls/${query.hall.id}`, query.hall)
@@ -90,12 +90,12 @@ export default {
             reject(error);
           })
           .finally(() => {
-            commit("SET_LOADING", false);
+            commit("SET_HALLS_LOADING", false);
           });
       });
     },
     createHall({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_HALLS_LOADING", true);
       return new Promise((resolve, reject) => {
         api("movies")
           .post(`cinemas/${query.cinemaId}/halls`, query.hall)
@@ -107,12 +107,12 @@ export default {
             reject(error);
           })
           .finally(() => {
-            commit("SET_LOADING", false);
+            commit("SET_HALLS_LOADING", false);
           });
       });
     },
     addHallPhotos({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_HALLS_LOADING", true);
       return new Promise((resolve, reject) => {
         const headers = {
           "Content-Type": "multipart/form-data",
@@ -132,12 +132,12 @@ export default {
             reject(error);
           })
           .finally(() => {
-            commit("SET_LOADING", false);
+            commit("SET_HALLS_LOADING", false);
           });
       });
     },
     removeHallPhoto({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_HALLS_LOADING", true);
       return new Promise((resolve, reject) => {
         api("movies")
           .delete(
@@ -150,7 +150,7 @@ export default {
             reject(error);
           })
           .finally(() => {
-            commit("SET_LOADING", false);
+            commit("SET_HALLS_LOADING", false);
           });
       });
     },

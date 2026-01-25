@@ -10,7 +10,7 @@ export default {
     movie: {},
   },
   mutations: {
-    SET_LOADING(state, value) {
+    SET_MOVIES_LOADING(state, value) {
       state.loading = value;
     },
     SET_MOVIE_ACTORS(state, payload) {
@@ -31,7 +31,7 @@ export default {
   },
   actions: {
     getMovies({ commit }, cinemaId) {
-  commit("SET_LOADING", true);
+  commit("SET_MOVIES_LOADING", true);
 
   // Nëse nuk ka cinemaId → merr të gjithë filmat (compat/global)
   const url = cinemaId ? `cinemas/${cinemaId}/movies` : `movies`;
@@ -44,13 +44,13 @@ export default {
         resolve(response);
       })
       .catch((error) => reject(error))
-      .finally(() => commit("SET_LOADING", false));
+      .finally(() => commit("SET_MOVIES_LOADING", false));
   });
 },
 
 
     getMovieActors({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_MOVIES_LOADING", true);
       return new Promise((resolve, reject) => {
         backendApi
           .get(`cinemas/${query.cinemaId}/movies/${query.movieId}/actors`)
@@ -59,12 +59,12 @@ export default {
             resolve(response);
           })
           .catch((error) => reject(error))
-          .finally(() => commit("SET_LOADING", false));
+          .finally(() => commit("SET_MOVIES_LOADING", false));
       });
     },
 
     getMovie({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_MOVIES_LOADING", true);
       
       // Nëse cinemaId është null ose undefined, përdorim rrugën publike
       const url = (!query.cinemaId || query.cinemaId === "null") 
@@ -79,12 +79,12 @@ export default {
             resolve(response);
           })
           .catch((error) => reject(error))
-          .finally(() => commit("SET_LOADING", false));
+          .finally(() => commit("SET_MOVIES_LOADING", false));
       });
     },
 
     removeMovie({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_MOVIES_LOADING", true);
       return new Promise((resolve, reject) => {
         backendApi
           .delete(`cinemas/${query.cinemaId}/movies/${query.movieId}`)
@@ -93,12 +93,12 @@ export default {
             resolve(response);
           })
           .catch((error) => reject(error))
-          .finally(() => commit("SET_LOADING", false));
+          .finally(() => commit("SET_MOVIES_LOADING", false));
       });
     },
 
     editMovie({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_MOVIES_LOADING", true);
       return new Promise((resolve, reject) => {
         backendApi
           .put(`cinemas/${query.cinemaId}/movies/${query.movie.id}`, query.movie)
@@ -107,12 +107,12 @@ export default {
             resolve(response);
           })
           .catch((error) => reject(error))
-          .finally(() => commit("SET_LOADING", false));
+          .finally(() => commit("SET_MOVIES_LOADING", false));
       });
     },
 
     createMovie({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_MOVIES_LOADING", true);
       return new Promise((resolve, reject) => {
         backendApi
           .post(`cinemas/${query.cinemaId}/movies`, query.movie)
@@ -121,12 +121,12 @@ export default {
             resolve(response);
           })
           .catch((error) => reject(error))
-          .finally(() => commit("SET_LOADING", false));
+          .finally(() => commit("SET_MOVIES_LOADING", false));
       });
     },
 
     addMoviePhotos({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_MOVIES_LOADING", true);
       return new Promise((resolve, reject) => {
         const headers = { "Content-Type": "multipart/form-data" };
 
@@ -138,12 +138,12 @@ export default {
           )
           .then((response) => resolve(response))
           .catch((error) => reject(error))
-          .finally(() => commit("SET_LOADING", false));
+          .finally(() => commit("SET_MOVIES_LOADING", false));
       });
     },
 
     removeMoviePhoto({ commit }, query) {
-      commit("SET_LOADING", true);
+      commit("SET_MOVIES_LOADING", true);
       return new Promise((resolve, reject) => {
         backendApi
           .delete(
@@ -151,7 +151,7 @@ export default {
           )
           .then((response) => resolve(response))
           .catch((error) => reject(error))
-          .finally(() => commit("SET_LOADING", false));
+          .finally(() => commit("SET_MOVIES_LOADING", false));
       });
     },
   },

@@ -40,7 +40,7 @@
             <v-card
               class="ticket-card ma-6"
               elevation="6"
-              @click="onDetailsClick(movieTime.id, movieTime.hall.id)"
+              @click="onDetailsClick(movieTime)"
             >
               <div class="ticket-left">
                 <v-icon color="white" size="36">mdi-movie-open-play</v-icon>
@@ -74,7 +74,7 @@
                       class="book-btn-ticket" 
                       tile
                       elevation="0"
-                      @click.stop="onDetailsClick(movieTime.id, movieTime.hall.id)"
+                      @click.stop="onDetailsClick(movieTime)"
                     >
                       <v-icon left>mdi-ticket-confirmation</v-icon>
                       BOOK NOW
@@ -94,13 +94,19 @@
 export default {
   data() {
     return {
-      selectedDate: this.formatShortDateTime(new Date()),
+      // Përdorim ISO format për datetime-local (yyyy-MM-ddTHH:mm)
+      selectedDate: new Date().toISOString().slice(0, 16),
     };
   },
   created() {},
   watch: {
-    movie() {
-      return this.getMovieTimes();
+    movie: {
+      immediate: true,
+      handler(newVal) {
+        if (newVal && newVal.id) {
+          this.getMovieTimes();
+        }
+      },
     },
   },
   computed: {
@@ -114,30 +120,79 @@ export default {
       return this.$store.state.movies.movie;
     },
     movieTimes() {
-      return this.$store.state.movieTimes.movieTimes;
+      return this.$store.state.movieTimes.movieTimes || [];
     },
     selectedDateMovieTimes() {
-      const movieTimes = this.movieTimes;
+      if (!this.movieTimes || !this.selectedDate) return [];
 
-      return movieTimes.filter(
-        (x) =>
-          this.formatSimpleDateTime(x.startTime) ===
-          this.formatSimpleDateTime(this.selectedDate)
-      );
+      // We compare only the date part "yyyy-MM-dd"
+      const targetDate = this.selectedDate.slice(0, 10);
+      
+      return this.movieTimes.filter((x) => {
+        const startTime = x.startTime || x.start_time;
+        if (!startTime) return false;
+        return startTime.slice(0, 10) === targetDate;
+      });
     },
   },
   methods: {
+    getMovieTimes() {
+      const query = {
+        cinemaId: this.cinema?.id || null,
+        movieId: this.movie?.id,
+      };
+      if (!query.movieId) return;
+
+      this.$store.dispatch("getMovieTimes", query).catch((error) => {
+        console.error("Error fetching movie times:", error);
+      });
+    },
     onClg() {},
-    onDetailsClick(movieTimeId, hallId) {
-      if (!this.movie || !this.movie.id) return;
+    onDetailsClick(movieTime) {
+      if (!this.movie || !this.movie.id) {
+        console.error("Movie object is missing or invalid:", this.movie);
+        return;
+      }
+
+      const resolvedHallId =
+        movieTime.hallId ||
+        movieTime.hall_id ||
+        movieTime.hall?.id ||
+        movieTime.hall?.hallId ||
+        movieTime.hall?.hall_id;
+
+      // Provojmë të nxjerrim cinemaId nga çdo vend i mundshëm
+      const movieTime_cId = movieTime.cinemaId || movieTime.cinema_id;
+      const movie_cId = this.movie.cinemaId || this.movie.cinema_id;
+      const state_cId = this.cinema?.id;
+      const route_cId = this.$route.params.cinemaId;
+
+      const cId = movieTime_cId || movie_cId || state_cId || route_cId;
+
+      console.log("--- Navigation Debug ---");
+      console.log("MovieTime ID:", movieTime.id);
+      console.log("Cinema ID found:", cId);
+      console.log("Sources:", { movieTime_cId, movie_cId, state_cId, route_cId });
+      console.log("Full movieTime object:", JSON.parse(JSON.stringify(movieTime)));
+      console.log("------------------------");
+
+      if (!cId || cId === "undefined") {
+        this.errorToast("Missing Cinema ID. Cinema Context: " + (this.cinema?.name || "None"));
+        return;
+      }
+
+      if (!resolvedHallId || String(resolvedHallId) === "undefined") {
+        this.errorToast("Missing Hall ID. Please ensure the movie time has a hall assigned.");
+        return;
+      }
       
       this.$router.push({
         name: "MovieTime-Details",
         params: {
-          cinemaId: this.cinema ? this.cinema.id : "0", // Fallback if no cinema context
-          movieId: this.movie.id,
-          hallId: hallId,
-          movieTimeId: movieTimeId,
+          cinemaId: String(cId),
+          movieId: String(this.movie.id),
+          hallId: String(resolvedHallId),
+          movieTimeId: String(movieTime.id),
         },
       });
     },

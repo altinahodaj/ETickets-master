@@ -204,8 +204,9 @@ export default {
   created() {
     this.movieId = Number(this.$route.params.movieId);
 
-    // nëse cinema nuk është loaded, mos e rrëzo
-    this.cinemaId = this.cinema?.id ?? null;
+    // Kjo ishte problematike sepse this.cinema ndonjëherë është undefined në fillim
+    // Fix: provo ta marrësh nga route params nëse ekziston
+    this.cinemaId = this.$route.params.cinemaId || (this.cinema?.id ?? null);
 
     this.getMovie(this.movieId);
     this.getReviews(this.movieId);

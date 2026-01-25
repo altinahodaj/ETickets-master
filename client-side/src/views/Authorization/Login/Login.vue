@@ -107,15 +107,24 @@ export default {
     signInWithGoogle() {
       const provider = new GoogleAuthProvider();
       signInWithPopup(getAuth(), provider).then((result) => {
-        this.getUser(result.user.uid).finally(() => {
+        this.getUserSync(result.user).finally(() => {
           const isAdmin = Boolean(this.$store.state.users.user?.isAdmin);
           this.$router.push(isAdmin ? "/admin" : "/home");
         });
       });
     },
-    getUser(id) {
-      return this.$store.dispatch("getUser", id).catch((error) => {
-        console.log("errror", error);
+    getUserSync(fbUser) {
+      return this.$store.dispatch("getUser", fbUser.uid).catch((error) => {
+        if (error.response && error.response.status === 404) {
+          console.log("User not in SQL DB, syncing...");
+          const newUser = {
+            id: fbUser.uid,
+            email: fbUser.email,
+            username: fbUser.displayName || fbUser.email.split("@")[0],
+          };
+          return this.$store.dispatch("addUser", newUser);
+        }
+        console.error("getUser error:", error);
       });
     },
     validate() {
@@ -127,7 +136,7 @@ export default {
         this.errorMsg = null;
         signInWithEmailAndPassword(getAuth(), this.email, this.password)
           .then((result) => {
-            this.getUser(result.user.uid).finally(() => {
+            this.getUserSync(result.user).finally(() => {
               const isAdmin = Boolean(this.$store.state.users.user?.isAdmin);
               this.$router.push(isAdmin ? "/admin" : "/home");
             });

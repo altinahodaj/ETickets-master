@@ -34,7 +34,7 @@ def dotnet_cinema(cinema_id: int, db: Session = Depends(get_db)):
 # -----------------------------
 # MOVIES
 # -----------------------------
-@router.get("/movies/")
+@router.get("/movies")
 def dotnet_movies(db: Session = Depends(get_db)):
     movies = (
         db.query(models.Movie)
@@ -72,7 +72,7 @@ def dotnet_cinema_movies(cinema_id: int, db: Session = Depends(get_db)):
 # -----------------------------
 # EVENTS (showtimes = MovieTime)
 # -----------------------------
-@router.get("/events/")
+@router.get("/events")
 def dotnet_events(db: Session = Depends(get_db)):
     events = (
         db.query(models.MovieTime)
@@ -80,7 +80,11 @@ def dotnet_events(db: Session = Depends(get_db)):
         .filter(models.MovieTime.deleted == False)
         .all()
     )
-    return {"result": events}
+    from app.schemas.movie_times import MovieTimeResponse
+    result = []
+    for e in events:
+        result.append(MovieTimeResponse.model_validate(e).model_dump(by_alias=True))
+    return {"result": result}
 
 
 @router.get("/cinemas/{cinema_id}/events")
@@ -94,7 +98,11 @@ def dotnet_cinema_events(cinema_id: int, db: Session = Depends(get_db)):
         )
         .all()
     )
-    return {"result": events}
+    from app.schemas.movie_times import MovieTimeResponse
+    result = []
+    for e in events:
+        result.append(MovieTimeResponse.model_validate(e).model_dump(by_alias=True))
+    return {"result": result}
 
 
 # -----------------------------
