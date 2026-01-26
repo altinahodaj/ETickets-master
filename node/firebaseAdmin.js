@@ -21,6 +21,16 @@ function getAdminApp() {
   // eslint-disable-next-line global-require, import/no-dynamic-require
   const serviceAccount = require(serviceAccountPath);
 
+  const expectedProjectId = String(process.env.PROJECT_ID || "").trim();
+  const serviceAccountProjectId = String(serviceAccount?.project_id || "").trim();
+  if (expectedProjectId && serviceAccountProjectId && expectedProjectId !== serviceAccountProjectId) {
+    console.warn(
+      "[firebase-admin] PROJECT_ID mismatch. ",
+      `env PROJECT_ID='${expectedProjectId}' but serviceAccount project_id='${serviceAccountProjectId}'. ` +
+        "Admin claims (isAdmin) will be set in the service account project, not the client project."
+    );
+  }
+
   app = admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
