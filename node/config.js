@@ -4,7 +4,8 @@ const dotenv = require('dotenv');
 const path = require('path');
 
 // Always load node/.env, even if the process is started from another folder.
-dotenv.config({ path: path.join(__dirname, '.env') });
+// Use override so local .env is the source of truth during development.
+dotenv.config({ path: path.join(__dirname, '.env'), override: true });
 
 const {
   PORT,

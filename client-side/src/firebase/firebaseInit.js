@@ -1,17 +1,18 @@
-import firebase from "firebase/app";
-import "firebase/firestore";
+import firebase from "firebase/compat/app";
+import "firebase/compat/firestore";
+import "firebase/compat/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBwCfevIeO_qsbJZaeWpJKYQyDTEvLEkz8",
-  authDomain: "e-tickets-1871d.firebaseapp.com",
-  projectId: "e-tickets-1871d",
-  storageBucket: "e-tickets-1871d.appspot.com",
-  messagingSenderId: "293188362138",
-  appId: "1:293188362138:web:3b37db09fac9f778d3e423",
-  measurementId: "G-L9T73D4S0H"
+  apiKey: "AIzaSyBmSyq7Y-QEkF1c5MxEdIhdf2p0a_yiltY",
+  authDomain: "e-tickets-1871d-2cb76.firebaseapp.com",
+  projectId: "e-tickets-1871d-2cb76",
+  storageBucket: "e-tickets-1871d-2cb76.firebasestorage.app",
+  messagingSenderId: "911479925220",
+  appId: "1:911479925220:web:4b3e8ea1681eec68f4bff1",
+  measurementId: "G-E7RMVVM81L"
 };
 
-const fireabaseApp = firebase.initializeApp(firebaseConfig);
+const fireabaseApp = !firebase.apps.length ? firebase.initializeApp(firebaseConfig) : firebase.app();
 const timestamp = firebase.firestore.FieldValue.serverTimestamp;
 
 const getAuth = firebase.auth();
