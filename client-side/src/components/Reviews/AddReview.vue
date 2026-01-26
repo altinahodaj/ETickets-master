@@ -1,5 +1,5 @@
 <template>
-<validation-observer ref="observer" v-slot="{ invalid }">
+<validation-observer ref="observer">
 <v-form ref="form" v-model="valid" lazy-validation @submit.prevent="createReview">
 <!-- Title -->
 <validation-provider v-slot="{ errors }" name="Title" rules="required|min:5">
@@ -47,13 +47,12 @@ style="color: #b00020; font-size: 12px; margin-top: 6px;"
 </validation-provider>
 
 <v-btn
-type="button"
-color="success"
-class="mr-4"
-:disabled="invalid || loading"
-@click="createReview"
+	type="submit"
+	color="success"
+	class="mr-4"
+	:disabled="loading"
 >
-Post Review
+	Post Review
 </v-btn>
 
 <v-btn type="button" color="error" class="mr-4" @click="resetForm">
@@ -119,6 +118,12 @@ this.clear();
 async createReview() {
 this.errorMsg = null;
 
+			// Validate observer fields before proceeding
+			if (this.$refs.observer) {
+				const validObserver = await this.$refs.observer.validate();
+				if (!validObserver) return;
+			}
+
 // ✅ mos lejo post nese s’je logged-in
 if (!this.loggedIn || !this.user || !this.user.id) {
 this.errorMsg = "Duhet me qenë logged in për me postu review.";
@@ -137,13 +142,30 @@ user_id: this.user.id,
 user_name: this.user.displayName || this.user.email || "User",
 };
 
-await this.$store.dispatch("createReview", { movieId: this.movieId, review });
+				console.log("AddReview.createReview: submitting", {
+					movieId: this.movieId,
+					loggedIn: this.loggedIn,
+					user: this.user,
+					review,
+				});
 
-this.clear();
-this.$router.push({ name: "Movies" });
+				await this.$store.dispatch("createReview", { movieId: this.movieId, review });
+
+				// Refresh reviews for this movie so the new review appears
+				try {
+					await this.$store.dispatch("getReviews", { movieId: this.movieId });
+				} catch (err) {
+					console.warn("Failed to refresh reviews after create:", err);
+				}
+
+				this.clear();
+				this.errorMsg = null;
 } catch (error) {
-console.log(error);
-this.errorMsg = "Nuk u postua review. Shiko console/network për detaje.";
+				console.error("AddReview.createReview error:", error);
+				// Prefer detailed message when available
+				this.errorMsg =
+					error.response?.data?.errors?.[0] || error.response?.data?.message || error.message ||
+					"Nuk u postua review. Shiko console/network për detaje.";
 } finally {
 this.loading = false;
 }

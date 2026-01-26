@@ -24,6 +24,11 @@ export default {
     ADD_ACTOR(state, payload) {
       state.actors.push(payload);
     },
+    UPDATE_ACTOR(state, payload) {
+      const index = state.actors.findIndex((a) => a.id === payload.id);
+      if (index !== -1) state.actors.splice(index, 1, payload);
+      if (state.actor && state.actor.id === payload.id) state.actor = payload;
+    },
   },
   actions: {
     getActors({ commit }) {
@@ -35,31 +40,25 @@ export default {
             commit("SET_ACTORS", response.data.result);
             resolve(response);
           })
-          .catch((error) => {
-            reject(error);
-          })
-          .finally(() => {
-            commit("SET_LOADING", false);
-          });
+          .catch((error) => reject(error))
+          .finally(() => commit("SET_LOADING", false));
       });
     },
+
     addActor({ commit }, actor) {
       commit("SET_LOADING", true);
       return new Promise((resolve, reject) => {
         api("movies")
           .post(`actors`, actor)
           .then((response) => {
-            commit("ADD_ACTOR", actor);
+            commit("ADD_ACTOR", response.data.result);
             resolve(response);
           })
-          .catch((error) => {
-            reject(error);
-          })
-          .finally(() => {
-            commit("SET_LOADING", false);
-          });
+          .catch((error) => reject(error))
+          .finally(() => commit("SET_LOADING", false));
       });
     },
+
     getActor({ commit }, actorId) {
       commit("SET_LOADING", true);
       return new Promise((resolve, reject) => {
@@ -69,73 +68,55 @@ export default {
             commit("SET_ACTOR", response.data.result);
             resolve(response);
           })
-          .catch((error) => {
-            reject(error);
-          })
-          .finally(() => {
-            commit("SET_LOADING", false);
-          });
+          .catch((error) => reject(error))
+          .finally(() => commit("SET_LOADING", false));
       });
     },
+
     removeActor({ commit }, actorId) {
       commit("SET_LOADING", true);
       return new Promise((resolve, reject) => {
         api("movies")
-          .delete(`/actors/${actorId}`)
+          .delete(`actors/${actorId}`)
           .then((response) => {
             commit("REMOVE_ACTOR", actorId);
             resolve(response);
           })
-          .catch((error) => {
-            reject(error);
-          })
-          .finally(() => {
-            commit("SET_LOADING", false);
-          });
+          .catch((error) => reject(error))
+          .finally(() => commit("SET_LOADING", false));
       });
     },
+
     editActor({ commit }, actor) {
       commit("SET_LOADING", true);
       return new Promise((resolve, reject) => {
         api("movies")
           .put(`actors/${actor.id}`, actor)
           .then((response) => {
-            commit("ADD_ACTOR", actor);
+            commit("UPDATE_ACTOR", response.data.result);
             resolve(response);
           })
-          .catch((error) => {
-            reject(error);
-          })
-          .finally(() => {
-            commit("SET_LOADING", false);
-          });
+          .catch((error) => reject(error))
+          .finally(() => commit("SET_LOADING", false));
       });
     },
+
     addActorPhotos({ commit }, query) {
       commit("SET_LOADING", true);
       return new Promise((resolve, reject) => {
-        const headers = {
-          "Content-Type": "multipart/form-data",
-        };
+        const headers = { "Content-Type": "multipart/form-data" };
         api("movies")
           .post(
             `cinemas/${query.cinemaId}/actors/${query.actorId}/photos`,
             query.files,
-            {
-              headers: headers,
-            }
+            { headers }
           )
-          .then((response) => {
-            resolve(response);
-          })
-          .catch((error) => {
-            reject(error);
-          })
-          .finally(() => {
-            commit("SET_LOADING", false);
-          });
+          .then((response) => resolve(response))
+          .catch((error) => reject(error))
+          .finally(() => commit("SET_LOADING", false));
       });
     },
+
     removeActorPhoto({ commit }, query) {
       commit("SET_LOADING", true);
       return new Promise((resolve, reject) => {
@@ -143,15 +124,9 @@ export default {
           .delete(
             `cinemas/${query.cinemaId}/actors/${query.actorId}/photos/${query.photoId}`
           )
-          .then((response) => {
-            resolve(response);
-          })
-          .catch((error) => {
-            reject(error);
-          })
-          .finally(() => {
-            commit("SET_LOADING", false);
-          });
+          .then((response) => resolve(response))
+          .catch((error) => reject(error))
+          .finally(() => commit("SET_LOADING", false));
       });
     },
   },

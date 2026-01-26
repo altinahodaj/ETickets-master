@@ -49,19 +49,30 @@ export default {
 },
 
 
-    getMovieActors({ commit }, query) {
-      commit("SET_MOVIES_LOADING", true);
-      return new Promise((resolve, reject) => {
-        backendApi
-          .get(`cinemas/${query.cinemaId}/movies/${query.movieId}/actors`)
-          .then((response) => {
-            commit("SET_MOVIE_ACTORS", response.data.result);
-            resolve(response);
-          })
-          .catch((error) => reject(error))
-          .finally(() => commit("SET_MOVIES_LOADING", false));
-      });
-    },
+  getMovieActors({ commit }, query) {
+    // ✅ nëse s’kemi cinemaId, mos bëj request fare
+    const cinemaId = Number(query?.cinemaId);
+    const movieId = Number(query?.movieId);
+
+    if (!cinemaId || !movieId) {
+      commit("SET_MOVIE_ACTORS", []); // ose mos e prek fare
+      return Promise.resolve({ data: { result: [] } });
+    }
+
+    commit("SET_MOVIES_LOADING", true);
+
+    return new Promise((resolve, reject) => {
+      backendApi
+        .get(`cinemas/${cinemaId}/movies/${movieId}/actors`)
+        .then((response) => {
+          commit("SET_MOVIE_ACTORS", response.data.result || []);
+          resolve(response);
+        })
+        .catch((error) => reject(error))
+        .finally(() => commit("SET_MOVIES_LOADING", false));
+    });
+  },
+
 
     getMovie({ commit }, query) {
       commit("SET_MOVIES_LOADING", true);

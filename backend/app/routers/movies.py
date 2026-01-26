@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
-from typing import Optional, List
+from typing import Optional
 
 from app.db.session import get_db
 from app.db import models
@@ -11,7 +11,9 @@ router = APIRouter(prefix="/api/cinemas/{cinema_id}/movies", tags=["movies"])
 public_router = APIRouter(prefix="/api/movies", tags=["public-movies"], include_in_schema=False)
 
 
-
+# ------------------------------
+# Helpers
+# ------------------------------
 def attach_review_stats(db: Session, movies: list[models.Movie]):
     if not movies:
         return
@@ -44,7 +46,56 @@ def attach_review_stats(db: Session, movies: list[models.Movie]):
         setattr(m, "total_reviews", stats["total_reviews"])
 
 
-@router.get("", response_model=MovieListResponse)
+def photo_to_dict(p: models.Photo):
+    return {
+        "id": p.id,
+        "imgClientPath": p.img_client_path,
+        "imgPath": p.img_path,
+        "name": p.name,
+        "photoType": p.photo_type,
+    }
+
+
+def actor_to_dict(a: models.Actor):
+    return {
+        "id": a.id,
+        "firstName": a.first_name,
+        "lastName": a.last_name,
+        "imgPath": a.img_path,
+        "nationality": a.nationality,
+        "genre": a.genre,
+        "birth": a.birth.isoformat() if a.birth else None,
+        "deleted": a.deleted,
+        "photos": [
+            {"id": p.id, "imgClientPath": p.img_client_path} for p in (a.photos or [])
+        ],
+    }
+
+
+def movie_to_payload(m: models.Movie):
+    # kjo është pjesa kyçe: kthejmë dict (jo ORM), që actors të jenë dict
+    return {
+        "id": m.id,
+        "cinemaId": m.cinema_id,
+        "title": m.title,
+        "description": m.description,
+        "genre": m.genre,
+        "language": m.language,
+        "lengthMinutes": m.length_minutes,
+        "releaseYear": m.release_year,
+        "director": m.director,
+        "deleted": m.deleted,
+        "avgRating": float(getattr(m, "avg_rating", 0.0) or 0.0),
+        "totalReviews": int(getattr(m, "total_reviews", 0) or 0),
+        "photos": [photo_to_dict(p) for p in (m.photos or [])],
+        "actors": [actor_to_dict(a) for a in (m.actors or [])],
+    }
+
+
+# ------------------------------
+# LIST MOVIES (by cinema)
+# ------------------------------
+@router.get("", response_model=dict)
 def list_movies(cinema_id: int, db: Session = Depends(get_db)):
     cinema = (
         db.query(models.Cinema)
@@ -56,54 +107,62 @@ def list_movies(cinema_id: int, db: Session = Depends(get_db)):
 
     movies = (
         db.query(models.Movie)
-        .options(joinedload(models.Movie.photos))
+        .options(
+            joinedload(models.Movie.photos),
+            joinedload(models.Movie.actors).joinedload(models.Actor.photos),
+        )
         .filter(models.Movie.cinema_id == cinema_id, models.Movie.deleted == False)
         .all()
     )
 
     attach_review_stats(db, movies)
-    
-    # Sigurohemi që çdo movie ka fushën 'actors' si listë boshe për momentin
+
+    # ✅ kthejmë payload dict për secilin movie, që mos ketë crash nga Pydantic
+    result = []
     for m in movies:
-        if not hasattr(m, "actors") or m.actors is None:
-            setattr(m, "actors", [])
+        payload = movie_to_payload(m)
+        result.append(MovieResponse.model_validate(payload).model_dump(by_alias=True))
 
-    return MovieListResponse(result=movies).model_dump(by_alias=True)
+    return {"result": result, "errors": [], "messages": []}
 
 
+# ------------------------------
+# GET SINGLE MOVIE (by cinema)
+# ------------------------------
 @router.get("/{movie_id}", response_model=dict)
 def get_movie(movie_id: int, cinema_id: Optional[int] = None, db: Session = Depends(get_db)):
-    query = db.query(models.Movie).options(joinedload(models.Movie.photos))
-    
+    query = db.query(models.Movie).options(
+        joinedload(models.Movie.photos),
+        joinedload(models.Movie.actors).joinedload(models.Actor.photos),
+    )
+
     if cinema_id:
         query = query.filter(models.Movie.cinema_id == cinema_id)
-        
-    movie = query.filter(
-        models.Movie.id == movie_id,
-        models.Movie.deleted == False,
-    ).first()
-    
+
+    movie = query.filter(models.Movie.id == movie_id, models.Movie.deleted == False).first()
+
     if not movie:
         raise HTTPException(status_code=404, detail="Movie not found")
 
     attach_review_stats(db, [movie])
-    
-    # Sigurohemi që actors të jetë listë (empty për tani)
-    if not hasattr(movie, "actors") or movie.actors is None:
-        setattr(movie, "actors", [])
 
-    return {
-        "result": MovieResponse.model_validate(movie).model_dump(by_alias=True),
-        "errors": [],
-        "messages": []
-    }
+    payload = movie_to_payload(movie)
+    movie_data = MovieResponse.model_validate(payload).model_dump(by_alias=True)
+
+    return {"result": movie_data, "errors": [], "messages": []}
 
 
+# ------------------------------
+# GET SINGLE MOVIE (public)
+# ------------------------------
 @public_router.get("/{movie_id}", response_model=dict)
 def get_public_movie(movie_id: int, db: Session = Depends(get_db)):
     movie = (
         db.query(models.Movie)
-        .options(joinedload(models.Movie.photos))
+        .options(
+            joinedload(models.Movie.photos),
+            joinedload(models.Movie.actors).joinedload(models.Actor.photos),
+        )
         .filter(models.Movie.id == movie_id, models.Movie.deleted == False)
         .first()
     )
@@ -111,16 +170,16 @@ def get_public_movie(movie_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Movie not found")
 
     attach_review_stats(db, [movie])
-    if not hasattr(movie, "actors") or movie.actors is None:
-        setattr(movie, "actors", [])
 
-    return {
-        "result": MovieResponse.model_validate(movie).model_dump(by_alias=True),
-        "errors": [],
-        "messages": []
-    }
+    payload = movie_to_payload(movie)
+    movie_data = MovieResponse.model_validate(payload).model_dump(by_alias=True)
+
+    return {"result": movie_data, "errors": [], "messages": []}
 
 
+# ------------------------------
+# CREATE MOVIE
+# ------------------------------
 @router.post("", response_model=dict)
 def create_movie(cinema_id: int, payload: MovieCreate, db: Session = Depends(get_db)):
     cinema = (
@@ -146,20 +205,22 @@ def create_movie(cinema_id: int, payload: MovieCreate, db: Session = Depends(get
     db.commit()
     db.refresh(movie)
 
+    # review stats default
     setattr(movie, "avg_rating", 0.0)
     setattr(movie, "total_reviews", 0)
 
-    return {"result": movie, "errors": [], "messages": ["Movie created"]}
+    data = MovieResponse.model_validate(movie_to_payload(movie)).model_dump(by_alias=True)
+    return {"result": data, "errors": [], "messages": ["Movie created"]}
 
 
+# ------------------------------
+# UPDATE MOVIE
+# ------------------------------
 @router.put("/{movie_id}", response_model=dict)
 def update_movie(cinema_id: int, movie_id: int, payload: MovieCreate, db: Session = Depends(get_db)):
     movie = (
         db.query(models.Movie)
-        .filter(
-            models.Movie.id == movie_id,
-            models.Movie.cinema_id == cinema_id,
-        )
+        .filter(models.Movie.id == movie_id, models.Movie.cinema_id == cinema_id)
         .first()
     )
     if not movie or movie.deleted:
@@ -176,19 +237,31 @@ def update_movie(cinema_id: int, movie_id: int, payload: MovieCreate, db: Sessio
     db.commit()
     db.refresh(movie)
 
+    # ngarko lidhjet
+    movie = (
+        db.query(models.Movie)
+        .options(
+            joinedload(models.Movie.photos),
+            joinedload(models.Movie.actors).joinedload(models.Actor.photos),
+        )
+        .filter(models.Movie.id == movie_id, models.Movie.deleted == False)
+        .first()
+    )
+
     attach_review_stats(db, [movie])
 
-    return {"result": movie, "errors": [], "messages": ["Movie updated"]}
+    data = MovieResponse.model_validate(movie_to_payload(movie)).model_dump(by_alias=True)
+    return {"result": data, "errors": [], "messages": ["Movie updated"]}
 
 
-@router.delete("/{movie_id}")
+# ------------------------------
+# DELETE MOVIE (soft delete)
+# ------------------------------
+@router.delete("/{movie_id}", response_model=dict)
 def delete_movie(cinema_id: int, movie_id: int, db: Session = Depends(get_db)):
     movie = (
         db.query(models.Movie)
-        .filter(
-            models.Movie.id == movie_id,
-            models.Movie.cinema_id == cinema_id,
-        )
+        .filter(models.Movie.id == movie_id, models.Movie.cinema_id == cinema_id)
         .first()
     )
     if not movie or movie.deleted:
