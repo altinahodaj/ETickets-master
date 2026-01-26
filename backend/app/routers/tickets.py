@@ -13,6 +13,34 @@ router = APIRouter(prefix="/api/cinemas/{cinema_id}/halls/{hall_id}", tags=["tic
 
 
 # ----------------------------
+# Ticket pricing (OOP: inheritance + polymorphism)
+# ----------------------------
+class BasePricer:
+    def calculate(self, *, base_price: int, is_3d: bool) -> int:
+        price = base_price
+        if is_3d:
+            price += 2
+        return price
+
+
+class AddonPricer(BasePricer):
+    def __init__(self, addon_amount: int = 0) -> None:
+        self.addon_amount = addon_amount
+
+    def calculate(self, *, base_price: int, is_3d: bool) -> int:
+        price = super().calculate(base_price=base_price, is_3d=is_3d)
+        return price + self.addon_amount
+
+
+class VipAddonPricer(AddonPricer):
+    addon_amount = 3
+
+
+class CoupleAddonPricer(AddonPricer):
+    addon_amount = 4
+
+
+# ----------------------------
 # Schemas
 # ----------------------------
 class ReserveTicketsDotnetRequest(BaseModel):
@@ -181,13 +209,17 @@ def generate_tickets(
         is_couple = bool(seat.is_couple_seat)
         is_3d = bool(hall.has_3d)
 
-        price = 5
-        if is_3d:
-            price += 2
-        if is_vip:
-            price += 3
-        if is_couple:
-            price += 4
+        pricer: BasePricer
+        if is_vip and is_couple:
+            pricer = AddonPricer(addon_amount=7)
+        elif is_vip:
+            pricer = VipAddonPricer()
+        elif is_couple:
+            pricer = CoupleAddonPricer()
+        else:
+            pricer = BasePricer()
+
+        price = pricer.calculate(base_price=5, is_3d=is_3d)
 
         ticket = models.Ticket(
             cinema_id=cinema_id,
