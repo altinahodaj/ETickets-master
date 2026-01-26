@@ -4,6 +4,9 @@ import VueRouter from "vue-router";
 import store from "@/store";
 import { getUserProfile } from "@/firebase/userProfile";
 
+Vue.use(VueRouter);
+
+// Fix duplicated navigation error (Vue Router 3)
 const originalPush = VueRouter.prototype.push;
 VueRouter.prototype.push = function push(location, onResolve, onReject) {
   if (onResolve || onReject)
@@ -11,15 +14,13 @@ VueRouter.prototype.push = function push(location, onResolve, onReject) {
   return originalPush.call(this, location).catch((err) => err);
 };
 
-Vue.use(VueRouter);
-
-//Routes
+// Route modules (arrays)
 import base from "./routes/index";
 import users from "./routes/users";
 import admin from "./routes/admin";
 import movies from "./routes/movies";
 import cinemas from "./routes/cinemas";
-import event from "./routes/event";
+import event from "./routes/events";
 import actors from "./routes/actors";
 import halls from "./routes/halls";
 import movieTimes from "./routes/movieTimes";
@@ -40,6 +41,8 @@ const router = new VueRouter({
     ...actors,
     ...halls,
     ...movieTimes,
+
+    // Login
     {
       path: "/login",
       name: "auth-login",
@@ -51,6 +54,12 @@ const router = new VueRouter({
         redirectIfLoggedIn: true,
       },
     },
+
+    // (optional) 404
+    // {
+    //   path: "*",
+    //   redirect: "/",
+    // },
   ],
 });
 
@@ -73,6 +82,7 @@ router.beforeEach(async (to, from, next) => {
 
   if (requiresAuth || requiresAdmin) {
     const user = await getCurrentUser().catch(() => null);
+
     if (!user) {
       alert("You dont have access!");
       return next("/");
@@ -106,12 +116,14 @@ router.beforeEach(async (to, from, next) => {
           if (profile) store.commit("SET_USER", profile);
         } catch (e) {
           console.warn("[admin-guard] failed to fetch profile", e);
-          // If Firestore is down, treat as non-admin
         }
       }
 
-      // Prefer claims-based admin flag; fallback to Firestore profile for legacy setups
-      const finalIsAdmin = Boolean(store.state.users.isAdmin || store.state.users.user?.isAdmin);
+      // Prefer claims-based admin flag; fallback to Firestore profile
+      const finalIsAdmin = Boolean(
+        store.state.users.isAdmin || store.state.users.user?.isAdmin
+      );
+
       console.debug("[admin-guard] computed isAdmin", {
         uid: user.uid,
         storeUserId: store.state.users.user?.id,
@@ -119,6 +131,7 @@ router.beforeEach(async (to, from, next) => {
         profileIsAdmin: Boolean(store.state.users.user?.isAdmin),
         finalIsAdmin,
       });
+
       if (!finalIsAdmin) {
         alert("Admin access required!");
         return next("/home");

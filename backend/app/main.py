@@ -13,7 +13,6 @@ from app.routers.halls import router as halls_router
 from app.routers.movie_times import router as movie_times_router, public_router as public_movie_times_router
 from app.routers.seating import router as seating_router
 from app.routers.tickets import router as tickets_router
-#from app.routers.events import router as events_router
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.routers.compat_dotnet import router as compat_dotnet_router

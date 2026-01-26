@@ -300,37 +300,18 @@ class Actor(Base):
         lazy="selectin",
     )
 
-
-
-
 class Event(Base):
     __tablename__ = "events"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     cinema_id: Mapped[int] = mapped_column(ForeignKey("cinemas.id"), nullable=False)
-    name: Mapped[str] = mapped_column(String(200), nullable=False)
+
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    is_paid: Mapped[bool] = mapped_column(Boolean, default=False)
-    price: Mapped[int] = mapped_column(Integer, default=0)
-    attendees_number: Mapped[int] = mapped_column(Integer, default=0)
+    event_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+    image_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
     deleted: Mapped[bool] = mapped_column(Boolean, default=False)
-
-    photos: Mapped[list["EventPhoto"]] = relationship(
-        "EventPhoto",
-        back_populates="event",
-        lazy="selectin",
-        cascade="all, delete-orphan"
-    )
-
-
-class EventPhoto(Base):
-    __tablename__ = "event_photos"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    event_id: Mapped[int] = mapped_column(ForeignKey("events.id"), nullable=False)
-    file_path: Mapped[str] = mapped_column(String(255), nullable=False)
-
-    event: Mapped["Event"] = relationship(back_populates="photos")
 
     
