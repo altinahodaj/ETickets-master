@@ -23,6 +23,7 @@ from app.routers.reviews import router as reviews_router
 from app.routers.events import router as events_router
 from app.routers.actors import router as actors_router
 from app.routers.users import router as users_router
+from app.routers.movie_actors import router as movie_actors_router
 
 
 
@@ -51,6 +52,7 @@ app.include_router(auth.router)
 app.include_router(reviews_router)
 app.include_router(actors_router)
 app.include_router(users_router)
+app.include_router(movie_actors_router)
 # Heqim public_movies_router sepse kemi konflikt me compat_dotnet_router
 # app.include_router(public_movies_router)
 

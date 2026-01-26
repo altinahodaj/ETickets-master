@@ -1,23 +1,29 @@
-from pydantic import BaseModel
-from datetime import date
+from pydantic import BaseModel, Field
 from typing import List, Optional
+from datetime import datetime
 
-class ActorBase(BaseModel):
+
+class PhotoOut(BaseModel):
+    id: str
+    imgClientPath: str
+
+
+class ActorCreate(BaseModel):
     firstName: str
     lastName: str
     imgPath: Optional[str] = None
     nationality: Optional[str] = None
     genre: Optional[str] = None
-    birth: Optional[date] = None
+    birth: Optional[datetime] = None
 
-class ActorCreate(ActorBase):
-    pass
 
-class ActorResponse(ActorBase):
+class ActorResponse(BaseModel):
     id: int
-    deleted: bool
-    photos: List[str] = []
-
-    model_config = {
-        "from_attributes": True
-    }
+    firstName: str
+    lastName: str
+    imgPath: Optional[str] = None
+    nationality: Optional[str] = None
+    genre: Optional[str] = None
+    birth: Optional[datetime] = None
+    deleted: bool = False
+    photos: List[PhotoOut] = Field(default_factory=list)

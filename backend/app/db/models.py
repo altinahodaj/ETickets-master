@@ -10,11 +10,19 @@ from sqlalchemy import (
     DateTime,
     UniqueConstraint,
     and_,
+    Table,
+    Column
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
 
+movie_actors = Table(
+    "movie_actors",
+    Base.metadata,
+    Column("movie_id", ForeignKey("movies.id"), primary_key=True),
+    Column("actor_id", ForeignKey("actors.id"), primary_key=True),
+)
 
 class User(Base):
     __tablename__ = "users"
@@ -125,6 +133,15 @@ class Movie(Base):
         order_by="desc(Review.insert_date)",
         lazy="selectin",
     )
+
+    actors: Mapped[list["Actor"]] = relationship(
+        "Actor",
+        secondary=movie_actors,
+        back_populates="movies",
+        lazy="selectin",
+    )
+
+
 
 
 class Review(Base):
@@ -275,6 +292,15 @@ class Actor(Base):
         order_by=lambda: Photo.insert_date.desc(),
         lazy="selectin",
     )
+
+    movies: Mapped[list["Movie"]] = relationship(
+        "Movie",
+        secondary=movie_actors,
+        back_populates="actors",
+        lazy="selectin",
+    )
+
+
 
 
 class Event(Base):

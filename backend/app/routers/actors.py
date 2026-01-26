@@ -1,43 +1,45 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from typing import List, Optional
+from pydantic import BaseModel, Field
 
 from app.db.session import get_db
 from app.db import models
-from app.schemas.actors import ActorCreate, ActorResponse
+from app.schemas.actors import ActorCreate
 
 router = APIRouter(prefix="/api/actors", tags=["actors"])
 
 
-# ------------------------------
-# Helper to serialize actor objects
-# ------------------------------
+class ApiResponse(BaseModel):
+    result: Optional[object] = None
+    errors: List[str] = Field(default_factory=list)
+    messages: List[str] = Field(default_factory=list)
+
+
 def actor_to_dict(a: models.Actor):
     return {
         "id": a.id,
         "firstName": a.first_name,
         "lastName": a.last_name,
-        "imgPath": a.img_path,       # main image
+        "imgPath": a.img_path,
         "nationality": a.nationality,
         "genre": a.genre,
         "birth": a.birth.isoformat() if a.birth else None,
         "deleted": a.deleted,
-        "photos": [p.img_client_path for p in (a.photos or [])],  # only frontend path
+        "photos": [
+            {"id": p.id, "imgClientPath": p.img_client_path}
+            for p in (a.photos or [])
+        ],
     }
 
 
-# ------------------------------
-# LIST ALL ACTORS
-# ------------------------------
-@router.get("")
+@router.get("", response_model=ApiResponse)
 def list_actors(db: Session = Depends(get_db)):
     actors = db.query(models.Actor).filter(models.Actor.deleted == False).all()
     return {"result": [actor_to_dict(a) for a in actors], "errors": [], "messages": []}
 
 
-# ------------------------------
-# GET SINGLE ACTOR
-# ------------------------------
-@router.get("/{actor_id}")
+@router.get("/{actor_id}", response_model=ApiResponse)
 def get_actor(actor_id: int, db: Session = Depends(get_db)):
     actor = db.query(models.Actor).filter(models.Actor.id == actor_id).first()
     if not actor or actor.deleted:
@@ -45,10 +47,7 @@ def get_actor(actor_id: int, db: Session = Depends(get_db)):
     return {"result": actor_to_dict(actor), "errors": [], "messages": []}
 
 
-# ------------------------------
-# CREATE ACTOR
-# ------------------------------
-@router.post("")
+@router.post("", response_model=ApiResponse)
 def create_actor(payload: ActorCreate, db: Session = Depends(get_db)):
     actor = models.Actor(
         first_name=payload.firstName,
@@ -65,10 +64,7 @@ def create_actor(payload: ActorCreate, db: Session = Depends(get_db)):
     return {"result": actor_to_dict(actor), "errors": [], "messages": ["Actor created"]}
 
 
-# ------------------------------
-# UPDATE ACTOR
-# ------------------------------
-@router.put("/{actor_id}")
+@router.put("/{actor_id}", response_model=ApiResponse)
 def update_actor(actor_id: int, payload: ActorCreate, db: Session = Depends(get_db)):
     actor = db.query(models.Actor).filter(models.Actor.id == actor_id).first()
     if not actor:
@@ -86,10 +82,7 @@ def update_actor(actor_id: int, payload: ActorCreate, db: Session = Depends(get_
     return {"result": actor_to_dict(actor), "errors": [], "messages": ["Actor updated"]}
 
 
-# ------------------------------
-# DELETE ACTOR (soft delete)
-# ------------------------------
-@router.delete("/{actor_id}")
+@router.delete("/{actor_id}", response_model=ApiResponse)
 def delete_actor(actor_id: int, db: Session = Depends(get_db)):
     actor = db.query(models.Actor).filter(models.Actor.id == actor_id).first()
     if not actor:
