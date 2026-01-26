@@ -2,6 +2,7 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import Vue from "vue";
 import VueRouter from "vue-router";
 import store from "@/store";
+import { getUserProfile } from "@/firebase/userProfile";
 
 const originalPush = VueRouter.prototype.push;
 VueRouter.prototype.push = function push(location, onResolve, onReject) {
@@ -78,18 +79,47 @@ router.beforeEach(async (to, from, next) => {
     }
 
     if (requiresAdmin) {
+      // Token-claims are the source of truth for admin
+      let isAdmin = Boolean(store.state.users.isAdmin);
+
+      // If role was just changed, force-refresh once to pick up new claims
+      if (!isAdmin && typeof user.getIdTokenResult === "function") {
+        try {
+          const tokenResult = await user.getIdTokenResult(true);
+          isAdmin = Boolean(tokenResult?.claims?.isAdmin);
+          store.commit("SET_IS_ADMIN", isAdmin);
+        } catch (e) {
+          // ignore; will fall back to stored value
+        }
+      }
+
       // Ensure we have the Firestore-backed profile (contains isAdmin)
       const currentProfileId = store.state.users.user?.id;
       if (!currentProfileId || String(currentProfileId) !== String(user.uid)) {
         try {
-          await store.dispatch("getUser", user.uid);
+          const profile = await getUserProfile(user.uid);
+          console.debug("[admin-guard] fetched profile", {
+            uid: user.uid,
+            hasProfile: Boolean(profile),
+            isAdmin: Boolean(profile?.isAdmin),
+          });
+          if (profile) store.commit("SET_USER", profile);
         } catch (e) {
-          // If Node/Firestore is down, treat as non-admin
+          console.warn("[admin-guard] failed to fetch profile", e);
+          // If Firestore is down, treat as non-admin
         }
       }
 
-      const isAdmin = Boolean(store.state.users.user?.isAdmin);
-      if (!isAdmin) {
+      // Prefer claims-based admin flag; fallback to Firestore profile for legacy setups
+      const finalIsAdmin = Boolean(store.state.users.isAdmin || store.state.users.user?.isAdmin);
+      console.debug("[admin-guard] computed isAdmin", {
+        uid: user.uid,
+        storeUserId: store.state.users.user?.id,
+        claimsIsAdmin: Boolean(store.state.users.isAdmin),
+        profileIsAdmin: Boolean(store.state.users.user?.isAdmin),
+        finalIsAdmin,
+      });
+      if (!finalIsAdmin) {
         alert("Admin access required!");
         return next("/home");
       }

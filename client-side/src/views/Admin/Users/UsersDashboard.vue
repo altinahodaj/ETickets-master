@@ -202,9 +202,13 @@ export default {
         "Delete User",
         "Are you sure you want to delete this user?"
       ).then((ok) => {
-        //TODOS: Fix user delete function later
         if (ok) {
-          console.log(userId);
+          this.$store
+            .dispatch("deleteUser", userId)
+            .catch((error) => {
+              console.log("error deleting user", error);
+            })
+            .then(() => this.onRefresh());
         }
       });
     },

@@ -6,6 +6,7 @@ import { BootstrapVue, IconsPlugin } from "bootstrap-vue";
 import { initializeApp } from "firebase/app";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import VueBarcode from "vue-barcode";
+import { ensureUserProfile } from "@/firebase/userProfile";
 
 import "@/assets/css/style.css";
 import "bootstrap/dist/css/bootstrap.css";
@@ -44,11 +45,32 @@ onAuthStateChanged(auth, async (u) => {
 	if (u) {
 		store.commit("SET_LOGGED_IN", true);
 
-		// Prefer the full user profile from Firestore (includes isAdmin)
+		// Source of truth for admin: Firebase Auth custom claims
 		try {
-			await store.dispatch("getUser", u.uid);
+			const tokenResult = await u.getIdTokenResult();
+			const isAdminClaim = Boolean(tokenResult?.claims?.isAdmin);
+			store.commit("SET_IS_ADMIN", isAdminClaim);
+			console.debug("[auth] loaded token claims", {
+				uid: u.uid,
+				isAdmin: isAdminClaim,
+			});
 		} catch (e) {
-			// Fallback: keep app working even if Node/Firestore is down
+			store.commit("SET_IS_ADMIN", false);
+			console.warn("[auth] failed to load token claims", e);
+		}
+
+		// Source of truth: Firestore profile users/{uid} (contains isAdmin)
+		try {
+			const profile = await ensureUserProfile(u);
+			console.debug("[auth] loaded Firestore profile", {
+				uid: u.uid,
+				email: u.email,
+				isAdmin: Boolean(profile?.isAdmin),
+			});
+			store.commit("SET_USER", profile);
+		} catch (e) {
+			console.warn("[auth] failed to load Firestore profile; falling back", e);
+			// Fallback: keep app working even if Firestore is down
 			store.commit("SET_USER", {
 				id: u.uid,
 				displayName: u.displayName || u.email || "User",
@@ -59,6 +81,7 @@ onAuthStateChanged(auth, async (u) => {
 		}
 	} else {
 		store.commit("SET_USER", null);
+		store.commit("SET_IS_ADMIN", false);
 		store.commit("SET_LOGGED_IN", false);
 	}
 });

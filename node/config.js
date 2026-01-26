@@ -1,8 +1,10 @@
 'use strict';
 
 const dotenv = require('dotenv');
+const path = require('path');
 
-dotenv.config();
+// Always load node/.env, even if the process is started from another folder.
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const {
   PORT,

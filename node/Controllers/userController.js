@@ -2,6 +2,7 @@
 
 const firebase = require("../db");
 const User = require("../Models/User");
+const { getAuth } = require("../firebaseAdmin");
 const firestore = firebase.firestore();
 
 const getUsers = async (req, res, next) => {
@@ -79,6 +80,9 @@ const makeAdmin = async (req, res, next) => {
     if (!userData.exists) {
       res.status(404).send(`Could not find User with id: ${id}`);
     } else {
+      // Set Auth custom claims (source of truth for admin access)
+      await getAuth().setCustomUserClaims(String(id), { isAdmin: true });
+
       await user.update({
         isAdmin: true,
       });
@@ -100,6 +104,8 @@ const removeAdmin = async (req, res, next) => {
     if (!userData.exists) {
       res.status(404).send(`Could not find User with id: ${id}`);
     } else {
+      await getAuth().setCustomUserClaims(String(id), { isAdmin: false });
+
       await user.update({
         isAdmin: false,
       });

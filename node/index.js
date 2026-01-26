@@ -5,6 +5,7 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const config = require("./config");
 const mongoose = require("mongoose");
+const { getAuth } = require("./firebaseAdmin");
 
 const app = express();
 app.use(express.json());
@@ -38,6 +39,44 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+async function bootstrapAdminClaims() {
+  const adminUids = String(process.env.ADMIN_UIDS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const adminEmails = String(process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (adminUids.length === 0 && adminEmails.length === 0) return;
+
+  try {
+    const auth = getAuth();
+
+    for (const uid of adminUids) {
+      try {
+        await auth.setCustomUserClaims(String(uid), { isAdmin: true });
+        console.log(`[bootstrap] ensured admin claim for UID ${uid}`);
+      } catch (e) {
+        console.warn(`[bootstrap] failed to set claim for UID ${uid}:`, e?.message || e);
+      }
+    }
+
+    for (const email of adminEmails) {
+      try {
+        const user = await auth.getUserByEmail(String(email));
+        await auth.setCustomUserClaims(String(user.uid), { isAdmin: true });
+        console.log(`[bootstrap] ensured admin claim for email ${email} (uid ${user.uid})`);
+      } catch (e) {
+        console.warn(`[bootstrap] failed to set claim for email ${email}:`, e?.message || e);
+      }
+    }
+  } catch (e) {
+    console.warn("[bootstrap] admin claims bootstrap skipped:", e?.message || e);
+  }
+}
+
 // Root route
 app.get("/", (req, res) => {
   res.send("<h1>ETickets Node API</h1><p>Running on port 3000. Go to <a href='/api/users'>/api/users</a></p>");
@@ -51,12 +90,15 @@ try {
     console.error("Error loading routes:", err);
 }
 
-const port = 3000;
+const port = Number(config?.port) || 3000;
 const server = app.listen(port, "0.0.0.0", () => {
   console.log("------------------------------------------");
   console.log("SERVER STARTING ON PORT " + port);
   console.log("Check http://localhost:" + port + "/api/health");
   console.log("------------------------------------------");
+
+  // Ensure configured admins always have the Auth claim
+  bootstrapAdminClaims();
 });
 
 server.on('error', (err) => {

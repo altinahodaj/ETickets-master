@@ -2,7 +2,11 @@
 .env
 backend/.env
 client-side/.env
+node/.env
+
+# Firebase Admin service account (NEVER commit)
 node/serviceAccountKey.json
+node/serviceAccountKey.*.json
 
 # python cache
 __pycache__/

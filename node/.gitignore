@@ -7,6 +7,13 @@ node_modules
 .env.local
 .env.*.local
 
+# Firebase Admin service account (NEVER commit)
+serviceAccountKey.json
+serviceAccountKey.*.json
+
+# Node local env
+.env
+
 # Log files
 npm-debug.log*
 yarn-debug.log*

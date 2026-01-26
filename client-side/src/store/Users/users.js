@@ -1,4 +1,5 @@
 import api from "@/libs/api";
+import { getUserProfile } from "@/firebase/userProfile";
 
 export default {
 state: {
@@ -17,6 +18,9 @@ state.loading = value;
 },
 SET_LOGGED_IN(state, value) {
 state.loggedIn = value;
+},
+SET_IS_ADMIN(state, value) {
+state.isAdmin = Boolean(value);
 },
 SET_ADMIN(state, payload) {
 const adminRole = Array.isArray(payload) ? payload.includes(1) : false;
@@ -45,17 +49,51 @@ resolve(response);
 });
 },
 
-getUser({ commit }, id) {
+deleteUser({ commit }, id) {
 commit("SET_USERS_LOADING", true);
 return new Promise((resolve, reject) => {
 api("node")
-.get(`users/${id}`)
+.delete(`users/${id}`)
 .then((response) => {
-commit("SET_USER", response.data);
 resolve(response);
 })
 .catch((error) => reject(error))
 .finally(() => commit("SET_USERS_LOADING", false));
+});
+},
+
+getUser({ commit }, id) {
+commit("SET_USERS_LOADING", true);
+return new Promise((resolve, reject) => {
+	// Prefer Firestore profile (contains isAdmin)
+	getUserProfile(id)
+		.then((profile) => {
+			if (profile) {
+				commit("SET_USER", profile);
+				resolve({ data: profile });
+				return;
+			}
+
+			// Fallback: Node API
+			api("node")
+				.get(`users/${id}`)
+				.then((response) => {
+					commit("SET_USER", response.data);
+					resolve(response);
+				})
+				.catch((error) => reject(error));
+		})
+		.catch(() => {
+			// If Firestore fails, try Node API
+			api("node")
+				.get(`users/${id}`)
+				.then((response) => {
+					commit("SET_USER", response.data);
+					resolve(response);
+				})
+				.catch((error) => reject(error));
+		})
+		.finally(() => commit("SET_USERS_LOADING", false));
 });
 },
 

@@ -104,11 +104,26 @@ export default {
   },
 
   methods: {
+    async syncAdminClaim(fbUser) {
+      try {
+        if (!fbUser?.getIdTokenResult) return false;
+        const tokenResult = await fbUser.getIdTokenResult(true);
+        const isAdminClaim = Boolean(tokenResult?.claims?.isAdmin);
+        this.$store.commit("SET_IS_ADMIN", isAdminClaim);
+        return isAdminClaim;
+      } catch (e) {
+        this.$store.commit("SET_IS_ADMIN", false);
+        return false;
+      }
+    },
     signInWithGoogle() {
       const provider = new GoogleAuthProvider();
       signInWithPopup(getAuth(), provider).then((result) => {
-        this.getUserSync(result.user).finally(() => {
-          const isAdmin = Boolean(this.$store.state.users.user?.isAdmin);
+        this.getUserSync(result.user).finally(async () => {
+          await this.syncAdminClaim(result.user);
+          const isAdmin = Boolean(
+            this.$store.state.users.isAdmin || this.$store.state.users.user?.isAdmin
+          );
           this.$router.push(isAdmin ? "/admin" : "/home");
         });
       });
@@ -136,8 +151,11 @@ export default {
         this.errorMsg = null;
         signInWithEmailAndPassword(getAuth(), this.email, this.password)
           .then((result) => {
-            this.getUserSync(result.user).finally(() => {
-              const isAdmin = Boolean(this.$store.state.users.user?.isAdmin);
+            this.getUserSync(result.user).finally(async () => {
+              await this.syncAdminClaim(result.user);
+              const isAdmin = Boolean(
+                this.$store.state.users.isAdmin || this.$store.state.users.user?.isAdmin
+              );
               this.$router.push(isAdmin ? "/admin" : "/home");
             });
           })
